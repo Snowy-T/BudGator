@@ -1,2 +1,2 @@
 # BudGator
-Budgeting App 
+Budgeting - one bite at a time

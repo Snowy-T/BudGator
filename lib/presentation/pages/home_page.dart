@@ -24,7 +24,7 @@ class HomePage extends ConsumerWidget {
                   ),
                   child: ListTile(
                     title: Text(t.title),
-                    subtitle: Text('${t.amount} \$ • ${t.category}'),
+                    subtitle: Text('${t.amount} € • ${t.category}'),
                     trailing: Text(
                       '${t.date.day}/${t.date.month}/${t.date.year}',
                     ),

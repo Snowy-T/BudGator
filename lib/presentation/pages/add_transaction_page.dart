@@ -26,12 +26,15 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) => value!.isEmpty ? 'Enter a title' : null,
               ),
+              const SizedBox(height: 16),
+
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(labelText: 'Amount'),
@@ -39,21 +42,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 validator: (value) => value!.isEmpty ? 'Enter an amount' : null,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final transaction = TransactionModel(
-                      title: _titleController.text,
-                      amount: double.parse(_amountController.text),
-                      date: _selectedDate,
-                      category: _category,
-                    );
-                    ref.read(transactionsProvider.notifier).add(transaction);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Add Transaction'),
-              ),
+
               DropdownButtonFormField<String>(
                 initialValue: _category,
                 items: ['General', 'Food', 'Transport', 'Entertainment']
@@ -63,6 +52,48 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   if (val != null) setState(() => _category = val);
                 },
                 decoration: const InputDecoration(labelText: 'Category'),
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Text(
+                    'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() => _selectedDate = picked);
+                      }
+                    },
+                    child: const Text('Select Date'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    final transaction = TransactionModel(
+                      title: _titleController.text,
+                      amount: double.parse(_amountController.text),
+                      date: _selectedDate,
+                      category: _category,
+                    );
+
+                    ref.read(transactionsProvider.notifier).add(transaction);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Add Transaction'),
               ),
             ],
           ),

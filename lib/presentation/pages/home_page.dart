@@ -32,12 +32,6 @@ class HomePage extends ConsumerWidget {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          GoRouter.of(context).push('/addTransaction');
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

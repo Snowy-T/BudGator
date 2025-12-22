@@ -26,27 +26,67 @@ class _HomePageState extends ConsumerState<HomePage> {
       Center(child: Text('Stats Tab')),
     ];
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('BudGator')),
-      body: pages[_currentIndex],
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/addTransaction'),
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerTop,
+    body: Stack(children: [
+      pages[_currentIndex],
+
+      Positioned(
+        top: 16,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage(),
+              ),
+              );
+            },
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.primary,
+                boxShadow: [
+                  BoxShadow(
+                  color: Color.black.withOpacity(0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.add,
+                size: 36,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      )
+    ],
+    );
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.double_arrow_sharp),
+            icon: Icon(Icons.home),
+            label: 'Home',
+            ),
+            BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz),
             label: 'Transactions',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Budget'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+            ),
+            BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Budget',
+            ),
+            BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up),
+            label: 'Stats',
+            ),
         ],
-      ),
     );
   }
 }

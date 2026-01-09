@@ -26,67 +26,74 @@ class _HomePageState extends ConsumerState<HomePage> {
       Center(child: Text('Stats Tab')),
     ];
 
-    body: Stack(children: [
-      pages[_currentIndex],
+    const categroyColors = {
+      'Food': Colors.orange,
+      'Transport': Colors.blue,
+      'Entertainment': Colors.purple,
+      'General' : Colors.green,
+    };
 
-      Positioned(
-        top: 16,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTransactionPage(),
-              ),
-              );
-            },
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-                boxShadow: [
-                  BoxShadow(
-                  color: Color.black.withOpacity(0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    return Scaffold(
+      body: Stack(
+        children: [
+          pages[_currentIndex],
+
+          if (_currentIndex == 0)
+            Positioned(
+              top: 200,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddTransactionPage(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 85,
+                    height: 85,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).colorScheme.primary,
+                      // boxShadow: [
+                      //   BoxShadow(
+                      //     color: Colors.black.withValues(alpha: 0.25),
+                      //     blurRadius: 10,
+                      //     offset: const Offset(0, 4),
+                      //   ),
+                      // ],
+                    ),
+                    child: const Icon(Icons.add, size: 36, color: Colors.white),
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 36,
-                color: Colors.white,
+                ),
               ),
             ),
-          ),
-        ),
-      )
-    ],
-    );
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-            ),
-            BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'Transactions',
-            ),
-            BottomNavigationBarItem(
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Budget',
-            ),
-            BottomNavigationBarItem(
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.trending_up),
             label: 'Stats',
-            ),
+          ),
         ],
+      ),
     );
   }
 }

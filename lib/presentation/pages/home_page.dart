@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/transaction_provider.dart';
 import 'add_transaction_page.dart';
+import '../widgets/add_transaction_ring.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -19,19 +20,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final transactions = ref.watch(transactionsProvider);
 
     final List<Widget> pages = [
-      // Hier kommen deine Tabs rein
-      Center(child: Text('Home Tab')),
-      Center(child: Text('Transaction Tab')),
-      Center(child: Text('Budget Tab')),
-      Center(child: Text('Stats Tab')),
+      const SizedBox.shrink(),
+      const Center(child: Text('Transaction Tab')),
+      const Center(child: Text('Budget Tab')),
+      const Center(child: Text('Stats Tab')),
     ];
-
-    const categroyColors = {
-      'Food': Colors.orange,
-      'Transport': Colors.blue,
-      'Entertainment': Colors.purple,
-      'General' : Colors.green,
-    };
 
     return Scaffold(
       body: Stack(
@@ -39,39 +32,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           pages[_currentIndex],
 
           if (_currentIndex == 0)
-            Positioned(
-              top: 200,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddTransactionPage(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: 85,
-                    height: 85,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Theme.of(context).colorScheme.primary,
-                      // boxShadow: [
-                      //   BoxShadow(
-                      //     color: Colors.black.withValues(alpha: 0.25),
-                      //     blurRadius: 10,
-                      //     offset: const Offset(0, 4),
-                      //   ),
-                      // ],
-                    ),
-                    child: const Icon(Icons.add, size: 36, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
+            const SafeArea(child: Center(child: AddTransactionRing())),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

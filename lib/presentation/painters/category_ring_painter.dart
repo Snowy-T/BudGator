@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../theme/category_colors.dart';
 import '../../data/models/transaction_model.dart';
 
 class CategoryRingPainter extends CustomPainter {
@@ -14,7 +15,8 @@ class CategoryRingPainter extends CustomPainter {
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10;
+      ..strokeWidth = 20
+      ..strokeCap = StrokeCap.round;
 
     final Map<String, double> sums = {};
 
@@ -24,5 +26,26 @@ class CategoryRingPainter extends CustomPainter {
 
     final total = sums.values.fold(0.0, (a, b) => a + b);
     if (total == 0) return;
+
+    double startAngle = -pi / 2;
+
+    sums.forEach((category, amount) {
+      final sweepAngle = (amount / total) * 2 * pi;
+
+      paint.color = categoryColors[category] ?? Colors.grey;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
+
+      startAngle += sweepAngle;
+    });
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

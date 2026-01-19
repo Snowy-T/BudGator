@@ -99,6 +99,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           ),
         ),
       ),
-    );
+    ); 
   }
 }

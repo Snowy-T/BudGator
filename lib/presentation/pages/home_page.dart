@@ -1,36 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/transaction_provider.dart';
+import 'add_transaction_page.dart';
+import '../widgets/add_transaction_ring.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final transactions = ref.watch(transactionsProvider);
+
+    final List<Widget> pages = [
+      const SizedBox.shrink(),
+      const Center(child: Text('Transaction Tab')),
+      const Center(child: Text('Budget Tab')),
+      const Center(child: Text('Stats Tab')),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('BudGator')),
-      body: transactions.isEmpty
-          ? const Center(child: Text('No transactions yet'))
-          : ListView.builder(
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final t = transactions[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 4,
-                    horizontal: 8,
-                  ),
-                  child: ListTile(
-                    title: Text(t.title),
-                    subtitle: Text('${t.amount} € • ${t.category}'),
-                    trailing: Text(
-                      '${t.date.day}/${t.date.month}/${t.date.year}',
-                    ),
-                  ),
-                );
-              },
-            ),
+      body: Stack(
+        children: [
+          pages[_currentIndex],
+
+          if (_currentIndex == 0)
+            const SafeArea(child: Center(child: AddTransactionRing())),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz),
+            label: 'Transactions',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Budget',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up),
+            label: 'Stats',
+          ),
+        ],
+      ),
     );
   }
 }

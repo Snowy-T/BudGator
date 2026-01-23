@@ -11,3 +11,7 @@ class TransactionPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<TransactionPage> createState() => _TransactionPageState();
 }
+
+class _TransactionPageState extends ConsumerState
+
+

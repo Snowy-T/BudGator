@@ -94,25 +94,18 @@ class _TransactionGroup extends StatelessWidget {
   final String date;
   final List<TransactionModel> items;
 
-
-  const _TransactionGroup({
-    required this.date,
-    required this.items,
-  });
+  const _TransactionGroup({required this.date, required this.items});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: context EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.all(12)),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              date,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text(date, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             ...items.map((t) => _TransactionTile(t)),
           ],
@@ -122,5 +115,37 @@ class _TransactionGroup extends StatelessWidget {
   }
 }
 
+// Einzelne TRANSAKTION
 
-Tran
+class _TransactionTile extends StatelessWidget {
+  final TransactionModel transaction;
+
+  const _TransactionTile(this.transaction);
+
+  @override
+  Widget build(BuildContext context) {
+    final isIncome = transaction.amount > 0;
+
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
+        child: Icon(
+          isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+          color: isIncome ? Colors.green : Colors.red,
+        ),
+      ),
+      title: Text(transaction.title),
+      subtitle: Text(
+        '${transaction.category} • '
+        '${transaction.date.hour}:${transaction.date.minute.toString().padLeft(2, '0')}',
+      ),
+      trailing: Text(
+        '${isIncome ? '+' : ''}${transaction.amount.toStringAsFixed(2)} €',
+        style: TextStyle(
+          color: isIncome ? Colors.green : Colors.red,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}

@@ -47,3 +47,7 @@ class _TransaactionsPageState extends ConsumerState<_TransactionsPage>
     );
   }
 }
+
+class _TransactionPageState extends ConsumerState
+
+

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../controllers/transaction_provider.dart';
 import '../painters/category_ring_painter.dart';
-import '../theme/category_colors.dart';
 
 class AddTransactionRing extends ConsumerWidget {
   const AddTransactionRing({super.key});

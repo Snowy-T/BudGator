@@ -1,6 +1,7 @@
 import 'package:budgator/presentation/pages/transactions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'budget_page.dart';
 import '../controllers/transaction_provider.dart';
 import '../widgets/add_transaction_ring.dart';
 import '../widgets/summary_bar.dart';
@@ -23,7 +24,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final List<Widget> pages = [
       const SizedBox.shrink(),
       const TransactionsPage(),
-      const Center(child: Text('Budget Tab')),
+      const BudgetPage(),
       const Center(child: Text('Stats Tab')),
     ];
 

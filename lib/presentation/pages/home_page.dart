@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/transaction_provider.dart';
 import 'add_transaction_page.dart';
 import '../widgets/add_transaction_ring.dart';
+import '../widgets/summary_bar.dart';
+
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -28,12 +30,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     ];
 
     return Scaffold(
+      appBar: _currentIndex == 0
+          ? AppBar(title: const Text('Budgator'), centerTitle: true)
+          : null,
       body: Stack(
         children: [
           pages[_currentIndex],
 
           if (_currentIndex == 0)
-            const SafeArea(child: Center(child: AddTransactionRing())),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 16, bottom: 24),
+                child: Column(
+                  children: [
+                    const AddTransactionRing(),
+                    const SizedBox(height: 24),
+                    const SummaryBar(),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

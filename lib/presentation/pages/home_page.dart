@@ -24,7 +24,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final List<Widget> pages = [
       const SizedBox.shrink(),
       const TransactionsPage(),
-      const BudgetPage(),
+      const Center(child: Text('Budget Tab')),
       const Center(child: Text('Stats Tab')),
     ];
 

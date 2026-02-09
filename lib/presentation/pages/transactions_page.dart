@@ -25,15 +25,45 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     final transactions = ref.watch(transactionsProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Transaktionen'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Alle'),
-            Tab(text: 'Einnahmen'),
-            Tab(text: 'Ausgaben'),
-          ],
+        title: const Text(
+          'Transaktionen',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(54),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                labelColor: Colors.black87,
+                unselectedLabelColor: Colors.grey[600],
+                labelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: const [
+                  Tab(text: 'Alle'),
+                  Tab(text: 'Einnahmen'),
+                  Tab(text: 'Ausgaben'),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
       body: TabBarView(
@@ -56,8 +86,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   }
 }
 
-// LISTENANSICHT
-
 class _TransactionList extends StatelessWidget {
   final List<TransactionModel> transactions;
 
@@ -66,7 +94,22 @@ class _TransactionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (transactions.isEmpty) {
-      return const Center(child: Text('Keine Transaktionen'));
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: const Text(
+            'Keine Transaktionen',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
     }
 
     final grouped = <String, List<TransactionModel>>{};
@@ -77,15 +120,13 @@ class _TransactionList extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: grouped.entries.map((entry) {
         return _TransactionGroup(date: entry.key, items: entry.value);
       }).toList(),
     );
   }
 }
-
-// KARTEN
 
 class _TransactionGroup extends StatelessWidget {
   final String date;
@@ -95,24 +136,32 @@ class _TransactionGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(date, style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
-            ...items.map((t) => _TransactionTile(t)),
-          ],
-        ),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            date,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...items.map((t) => _TransactionTile(t)),
+        ],
       ),
     );
   }
 }
-
-// TRANSAKTIONEN
 
 class _TransactionTile extends StatelessWidget {
   final TransactionModel transaction;
@@ -122,26 +171,54 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIncome = transaction.type == TransactionType.income;
+    final color = isIncome ? Colors.green : Colors.red;
+    final icon = isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+    final time =
+        '${transaction.date.hour}:${transaction.date.minute.toString().padLeft(2, '0')}';
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
-        child: Icon(
-          isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-          color: isIncome ? Colors.green : Colors.red,
-        ),
-      ),
-      title: Text(transaction.title),
-      subtitle: Text(
-        '${transaction.category} • '
-        '${transaction.date.hour}:${transaction.date.minute.toString().padLeft(2, '0')}',
-      ),
-      trailing: Text(
-        '${isIncome ? '+' : '-'}${transaction.amount.toStringAsFixed(2)} €',
-        style: TextStyle(
-          color: isIncome ? Colors.green : Colors.red,
-          fontWeight: FontWeight.bold,
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  transaction.title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '${transaction.category} ? $time',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${isIncome ? '+' : '-'}?${transaction.amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

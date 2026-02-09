@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../controllers/transaction_provider.dart';
+import '../controllers/home_calculation_provider.dart';
 
 class SummaryBar extends ConsumerWidget {
   const SummaryBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactions = ref.watch(transactionsProvider);
-
-    final income = transactions
-        .where((t) => t.amount > 0)
-        .fold<double>(0, (sum, t) => sum + t.amount);
-    final expenses = transactions
-        .where((t) => t.amount < 0)
-        .fold<double>(0, (sum, t) => sum + t.amount.abs());
-    final balance = income - expenses;
+    final balance = ref.watch(balanceProvider);
+    final income = ref.watch(totalIncomeProvider);
+    final expenses = ref.watch(totalExpensesProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

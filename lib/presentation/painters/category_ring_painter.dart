@@ -18,9 +18,14 @@ class CategoryRingPainter extends CustomPainter {
       ..strokeWidth = 20
       ..strokeCap = StrokeCap.round;
 
+    // Nur Ausgaben anzeigen
+    final expenses = transactions
+        .where((t) => t.type == TransactionType.expense)
+        .toList();
+
     final Map<String, double> sums = {};
 
-    for (final t in transactions) {
+    for (final t in expenses) {
       sums[t.category] = (sums[t.category] ?? 0) + t.amount;
     }
 

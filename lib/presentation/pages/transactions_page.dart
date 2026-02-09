@@ -41,17 +41,20 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         children: [
           _TransactionList(transactions),
           _TransactionList(
-            transactions.where((t) => t.amount > 0).toList(),
+            transactions
+                .where((t) => t.type == TransactionType.income)
+                .toList(),
           ),
           _TransactionList(
-            transactions.where((t) => t.amount < 0).toList(),
+            transactions
+                .where((t) => t.type == TransactionType.expense)
+                .toList(),
           ),
         ],
       ),
     );
   }
 }
-
 
 // LISTENANSICHT
 
@@ -69,23 +72,18 @@ class _TransactionList extends StatelessWidget {
     final grouped = <String, List<TransactionModel>>{};
 
     for (final t in transactions) {
-      final key =
-          '${t.date.day}.${t.date.month}.${t.date.year}';
+      final key = '${t.date.day}.${t.date.month}.${t.date.year}';
       grouped.putIfAbsent(key, () => []).add(t);
     }
 
     return ListView(
       padding: const EdgeInsets.all(12),
       children: grouped.entries.map((entry) {
-        return _TransactionGroup(
-          date: entry.key,
-          items: entry.value,
-        );
+        return _TransactionGroup(date: entry.key, items: entry.value);
       }).toList(),
     );
   }
 }
-
 
 // KARTEN
 
@@ -93,10 +91,7 @@ class _TransactionGroup extends StatelessWidget {
   final String date;
   final List<TransactionModel> items;
 
-  const _TransactionGroup({
-    required this.date,
-    required this.items,
-  });
+  const _TransactionGroup({required this.date, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -107,10 +102,7 @@ class _TransactionGroup extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              date,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
+            Text(date, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             ...items.map((t) => _TransactionTile(t)),
           ],
@@ -119,7 +111,6 @@ class _TransactionGroup extends StatelessWidget {
     );
   }
 }
-
 
 // TRANSAKTIONEN
 
@@ -130,12 +121,11 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = transaction.amount > 0;
+    final isIncome = transaction.type == TransactionType.income;
 
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor:
-            isIncome ? Colors.green.shade100 : Colors.red.shade100,
+        backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
         child: Icon(
           isIncome ? Icons.arrow_downward : Icons.arrow_upward,
           color: isIncome ? Colors.green : Colors.red,
@@ -147,7 +137,7 @@ class _TransactionTile extends StatelessWidget {
         '${transaction.date.hour}:${transaction.date.minute.toString().padLeft(2, '0')}',
       ),
       trailing: Text(
-        '${isIncome ? '+' : ''}${transaction.amount.toStringAsFixed(2)} €',
+        '${isIncome ? '+' : '-'}${transaction.amount.toStringAsFixed(2)} €',
         style: TextStyle(
           color: isIncome ? Colors.green : Colors.red,
           fontWeight: FontWeight.bold,

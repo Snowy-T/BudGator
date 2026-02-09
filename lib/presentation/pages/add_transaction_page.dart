@@ -16,89 +16,128 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   final TextEditingController _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _category = 'General';
+  TransactionType _type = TransactionType.expense;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Transaction')),
+      appBar: AppBar(title: const Text('Transaktion hinzufügen')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (value) => value!.isEmpty ? 'Enter a title' : null,
-              ),
-              const SizedBox(height: 16),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Titel'),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Titel eingeben' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _amountController,
+                  decoration: const InputDecoration(labelText: 'Betrag (€)'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Betrag eingeben' : null,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<TransactionType>(
+                  value: _type,
+                  items: TransactionType.values
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            t == TransactionType.income
+                                ? 'Einnahme'
+                                : 'Ausgabe',
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _type = val);
+                  },
+                  decoration: const InputDecoration(labelText: 'Typ'),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _category,
+                  items:
+                      [
+                            'General',
+                            'Wohnen',
+                            'Lebensmittel',
+                            'Transport',
+                            'Unterhaltung',
+                            'Shopping',
+                            'Café',
+                            'Salary',
+                          ]
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
+                          .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _category = val);
+                  },
+                  decoration: const InputDecoration(labelText: 'Kategorie'),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text(
+                      'Datum: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setState(() => _selectedDate = picked);
+                        }
+                      },
+                      child: const Text('Datum wählen'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        final transaction = TransactionModel(
+                          title: _titleController.text,
+                          amount: double.parse(_amountController.text),
+                          date: _selectedDate,
+                          category: _category,
+                          type: _type,
+                        );
 
-              TextFormField(
-                controller: _amountController,
-                decoration: const InputDecoration(labelText: 'Amount'),
-                keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? 'Enter an amount' : null,
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                items: ['General', 'Food', 'Transport', 'Entertainment']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _category = val);
-                },
-                decoration: const InputDecoration(labelText: 'Category'),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Text(
-                    'Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now(),
-                      );
-                      if (picked != null) {
-                        setState(() => _selectedDate = picked);
+                        ref
+                            .read(transactionsProvider.notifier)
+                            .add(transaction);
+                        Navigator.pop(context);
                       }
                     },
-                    child: const Text('Select Date'),
+                    child: const Text('Transaktion hinzufügen'),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final transaction = TransactionModel(
-                      title: _titleController.text,
-                      amount: double.parse(_amountController.text),
-                      date: _selectedDate,
-                      category: _category,
-                    );
-
-                    ref.read(transactionsProvider.notifier).add(transaction);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Add Transaction'),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ); 
+    );
   }
 }

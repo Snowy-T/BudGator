@@ -172,7 +172,9 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = transaction.type == TransactionType.income;
     final color = isIncome ? Colors.green : Colors.red;
-    final icon = isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+    final icon = isIncome
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
     final time =
         '${transaction.date.hour}:${transaction.date.minute.toString().padLeft(2, '0')}';
 
@@ -201,17 +203,14 @@ class _TransactionTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${transaction.category} ? $time',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                  ),
+                  '${transaction.category} • $time',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
           Text(
-            '${isIncome ? '+' : '-'}?${transaction.amount.toStringAsFixed(2)}',
+            '${isIncome ? '+' : '-'}€${transaction.amount.toStringAsFixed(2)}',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,

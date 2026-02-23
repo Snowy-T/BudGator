@@ -24,7 +24,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Transaktion hinzuf?gen',
+          'Transaktion hinzufügen',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
@@ -97,7 +97,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
-                      decoration: _fieldDecoration('Betrag (?)'),
+                      decoration: _fieldDecoration('Betrag'),
                       keyboardType: TextInputType.number,
                       validator: (value) =>
                           value!.isEmpty ? 'Betrag eingeben' : null,
@@ -133,7 +133,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                             'Transport',
                             'Unterhaltung',
                             'Shopping',
-                            'Caf?',
+                            'Cafe',
                             'Gehalt',
                           ]
                               .map(
@@ -170,7 +170,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                               setState(() => _selectedDate = picked);
                             }
                           },
-                          child: const Text('Datum w?hlen'),
+                          child: const Text('Datum wählen'),
                         ),
                       ],
                     ),
@@ -202,7 +202,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           ),
                         ),
                         child: const Text(
-                          'Transaktion hinzuf?gen',
+                          'Transaktion hinzufügen',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),

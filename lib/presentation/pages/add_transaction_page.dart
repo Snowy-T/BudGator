@@ -40,7 +40,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFFFBBF24)],
+                  colors: [Color(0xFF10B981), Color(0xFF098825)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -195,7 +195,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: Color(0xFF098825),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

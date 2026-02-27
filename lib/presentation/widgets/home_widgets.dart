@@ -38,7 +38,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFFFBBF24)],
+          colors: [Color(0xFF10B981), Color(0xFF098825)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -792,7 +792,7 @@ class SavingsGoalWidget extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFFFBBF24)],
+          colors: [Color(0xFF10B981), Color(0xFF098825)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

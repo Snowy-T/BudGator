@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
+import 'package:intl/intl.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
@@ -35,32 +36,35 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(54),
+          preferredSize: const Size.fromHeight(66),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: Container(
-              height: 40,
+              width: double.infinity,
+              height: 48,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 4, 6, 0),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  indicator: _BrowserTabIndicator(color: Colors.white),
+                  labelColor: Color(0xFF10B981),
+                  unselectedLabelColor: Colors.grey[700],
+                  labelStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Alle'),
+                    Tab(text: 'Einnahmen'),
+                    Tab(text: 'Ausgaben'),
+                  ],
                 ),
-                labelColor: Colors.black87,
-                unselectedLabelColor: Colors.grey[600],
-                labelStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: const [
-                  Tab(text: 'Alle'),
-                  Tab(text: 'Einnahmen'),
-                  Tab(text: 'Ausgaben'),
-                ],
               ),
             ),
           ),
@@ -82,6 +86,55 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BrowserTabIndicator extends Decoration {
+  final Color color;
+
+  const _BrowserTabIndicator({required this.color});
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) {
+    return _BrowserTabIndicatorPainter(this);
+  }
+}
+
+class _BrowserTabIndicatorPainter extends BoxPainter {
+  final _BrowserTabIndicator decoration;
+
+  _BrowserTabIndicatorPainter(this.decoration);
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null) return;
+
+    final rect = offset & size;
+    final tabRect = Rect.fromLTWH(
+      rect.left + 1,
+      rect.top + 1,
+      rect.width - 4,
+      rect.height -2,
+    );
+
+    final rRect = RRect.fromRectAndCorners(
+      tabRect,
+      topLeft: const Radius.circular(9),
+      topRight: const Radius.circular(9),
+    );
+
+    final fillPaint = Paint()..color = decoration.color;
+    canvas.drawRRect(rRect, fillPaint);
+
+    final eraseBottomPaint = Paint()
+      ..color = decoration.color
+      ..strokeWidth = 2;
+    canvas.drawLine(
+      Offset(tabRect.left + 1, tabRect.bottom),
+      Offset(tabRect.right - 1, tabRect.bottom),
+      eraseBottomPaint,
     );
   }
 }
@@ -114,10 +167,26 @@ class _TransactionList extends StatelessWidget {
 
     final grouped = <String, List<TransactionModel>>{};
 
-    for (final t in transactions) {
-      final key = '${t.date.day}.${t.date.month}.${t.date.year}';
-      grouped.putIfAbsent(key, () => []).add(t);
-    }
+  String getGroupKey(DateTime date) {
+  final now = DateTime.now();
+  
+  // Calculate if date is within "current week"
+  // Checks within last 7 days.
+  final difference = now.difference(date).inDays;
+  final isThisWeek = difference >= 0 && difference < 7;
+
+  if (isThisWeek) {
+    return DateFormat('EEEE').format(date); // "Monday"
+  } else {
+    return DateFormat('dd MMM yy').format(date); //  "01 Mar 26"
+  }
+}
+
+//LOOP
+for (final t in transactions) {
+  final key = getGroupKey(t.date);
+  grouped.putIfAbsent(key, () => []).add(t);
+}
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -150,7 +219,7 @@ class _TransactionGroup extends StatelessWidget {
           Text(
             date,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),

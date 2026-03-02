@@ -48,10 +48,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: const Icon(Icons.add, color: Colors.white, size: 32),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: SizedBox(
-        height: 60,
+      bottomNavigationBar: SafeArea(
+        top: false,
         child: BottomAppBar(
-          height: 60,
+          height: 68,
           shape: const CircularNotchedRectangle(),
           notchMargin: 8,
           child: Row(
@@ -123,21 +123,25 @@ class _NavItem extends StatelessWidget {
     return InkWell(
       onTap: () => onTap(index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: isActive ? Colors.green : Colors.grey, size: 20),
             const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 9,
-                color: isActive ? Colors.green : Colors.grey,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: isActive ? Colors.green : Colors.grey,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
           ],

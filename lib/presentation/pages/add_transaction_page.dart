@@ -104,7 +104,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<TransactionType>(
-                      value: _type,
+                      initialValue: _type,
                       items: TransactionType.values
                           .map(
                             (t) => DropdownMenuItem(
@@ -124,18 +124,18 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _category,
+                      initialValue: _category,
                       items:
                           [
-                            'General',
-                            'Wohnen',
-                            'Lebensmittel',
-                            'Transport',
-                            'Unterhaltung',
-                            'Shopping',
-                            'Cafe',
-                            'Gehalt',
-                          ]
+                                'General',
+                                'Wohnen',
+                                'Lebensmittel',
+                                'Transport',
+                                'Unterhaltung',
+                                'Shopping',
+                                'Cafe',
+                                'Gehalt',
+                              ]
                               .map(
                                 (c) =>
                                     DropdownMenuItem(value: c, child: Text(c)),

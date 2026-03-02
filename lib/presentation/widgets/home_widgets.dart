@@ -773,6 +773,10 @@ class SavingsGoalWidget extends ConsumerWidget {
         return;
       }
 
+      if (!context.mounted) {
+        return;
+      }
+
       final name = nameController.text.trim();
       final target = double.tryParse(
         targetController.text.replaceAll(',', '.').trim(),
@@ -792,7 +796,7 @@ class SavingsGoalWidget extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF098825)],
+          colors: [Color(0xFF10B981), Color(0xFFFBBF24)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

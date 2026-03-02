@@ -27,3 +27,24 @@ Sideloadly installs `.ipa` files on iPhone, but Flutter iOS builds require macOS
 - IPA generation cannot be done natively on Windows for Flutter iOS targets.
 - If you use a free Apple ID, the app signature typically expires after 7 days.
 
+## Build with Codemagic (recommended for your setup)
+
+This repo now includes [codemagic.yaml](codemagic.yaml) with:
+
+- `sideloadly_ipa`
+- `sideloadly_ipa_auto_build_number` (recommended)
+
+1. In Codemagic, connect this repository.
+2. Start a new build using workflow: `sideloadly_ipa_auto_build_number`.
+3. After build completion, download artifact:
+
+	```
+	build/ios/iphoneos/Budgator.ipa
+	```
+
+4. Open Sideloadly on Windows and select the downloaded IPA.
+
+### Why auto build number helps
+
+Using `sideloadly_ipa_auto_build_number` sets iOS build number from Codemagic `BUILD_NUMBER`, which avoids install failures caused by reusing the same build number.
+

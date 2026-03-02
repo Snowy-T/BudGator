@@ -14,8 +14,18 @@ fi
 echo "Fetching dependencies..."
 flutter pub get
 
+BUILD_ARGS=("--release" "--no-codesign")
+
+if [[ -n "${CI_BUILD_NAME:-}" ]]; then
+  BUILD_ARGS+=("--build-name=${CI_BUILD_NAME}")
+fi
+
+if [[ -n "${CI_BUILD_NUMBER:-}" ]]; then
+  BUILD_ARGS+=("--build-number=${CI_BUILD_NUMBER}")
+fi
+
 echo "Building iOS app (no code signing)..."
-flutter build ios --release --no-codesign
+flutter build ios "${BUILD_ARGS[@]}"
 
 BUILD_DIR="$ROOT_DIR/build/ios/iphoneos"
 APP_PATH="$BUILD_DIR/Runner.app"
@@ -37,4 +47,3 @@ zip -qry "$IPA_PATH" Payload
 rm -rf Payload
 
 echo "IPA created: $IPA_PATH"
-*** End Patch

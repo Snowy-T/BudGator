@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../controllers/home_calculation_provider.dart' hide savingsGoalProvider;
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
@@ -17,21 +20,85 @@ String formatAmount(double amount) {
   return '€$intPart.${parts[1]}';
 }
 
-class BalanceCard extends ConsumerStatefulWidget {
-  const BalanceCard({super.key});
+String formatWeekdayOrDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+  final endOfWeek = startOfWeek.add(const Duration(days: 7));
+  final dateOnly = DateTime(date.year, date.month, date.day);
+  final isThisWeek =
+      !dateOnly.isBefore(startOfWeek) && dateOnly.isBefore(endOfWeek);
 
-  @override
-  ConsumerState<BalanceCard> createState() => _BalanceCardState();
+  if (isThisWeek) {
+    const weekdayNames = [
+      'Montag',
+      'Dienstag',
+      'Mittwoch',
+      'Donnerstag',
+      'Freitag',
+      'Samstag',
+      'Sonntag',
+    ];
+    return weekdayNames[dateOnly.weekday - 1];
+  }
+
+  if (dateOnly.year == today.year) {
+    return DateFormat('dd.MMM', 'en_US').format(dateOnly);
+  }
+  return DateFormat('dd.MMM.yyyy', 'en_US').format(dateOnly);
 }
 
-class _BalanceCardState extends ConsumerState<BalanceCard> {
-  bool _isVisible = true;
+final amountVisibilityProvider = StateProvider<bool>((ref) => true);
+
+class SensitiveText extends StatelessWidget {
+  final String text;
+  final TextStyle? style;
+  final bool isVisible;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  const SensitiveText({
+    super.key,
+    required this.text,
+    this.style,
+    required this.isVisible,
+    this.maxLines,
+    this.overflow,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final child = Text(
+      text,
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+
+    final shouldBlur = !isVisible && text.contains('€');
+
+    if (!shouldBlur) {
+      return child;
+    }
+
+    return ClipRect(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: child,
+      ),
+    );
+  }
+}
+
+class BalanceCard extends ConsumerWidget {
+  const BalanceCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final balance = ref.watch(balanceProvider);
     final income = ref.watch(totalIncomeProvider);
     final expenses = ref.watch(totalExpensesProvider);
+    final isVisible = ref.watch(amountVisibilityProvider);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -58,9 +125,12 @@ class _BalanceCardState extends ConsumerState<BalanceCard> {
                 ),
               ),
               GestureDetector(
-                onTap: () => setState(() => _isVisible = !_isVisible),
+                onTap: () {
+                  ref.read(amountVisibilityProvider.notifier).state =
+                      !isVisible;
+                },
                 child: Icon(
-                  _isVisible
+                  isVisible
                       ? Icons.visibility_rounded
                       : Icons.visibility_off_rounded,
                   color: Colors.white.withValues(alpha: 0.8),
@@ -70,10 +140,10 @@ class _BalanceCardState extends ConsumerState<BalanceCard> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            _isVisible
-                ? '€${balance.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}'
-                : '••••••',
+          SensitiveText(
+            text:
+                '€${balance.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+            isVisible: isVisible,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 36,
@@ -88,6 +158,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> {
                   label: 'Einnahmen',
                   amount: income,
                   icon: Icons.arrow_downward_rounded,
+                  isVisible: isVisible,
                 ),
               ),
               const SizedBox(width: 12),
@@ -96,6 +167,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> {
                   label: 'Ausgaben',
                   amount: expenses,
                   icon: Icons.arrow_upward_rounded,
+                  isVisible: isVisible,
                 ),
               ),
             ],
@@ -110,11 +182,13 @@ class _InlineAmount extends StatelessWidget {
   final String label;
   final double amount;
   final IconData icon;
+  final bool isVisible;
 
   const _InlineAmount({
     required this.label,
     required this.amount,
     required this.icon,
+    required this.isVisible,
   });
 
   @override
@@ -142,8 +216,10 @@ class _InlineAmount extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '€${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                SensitiveText(
+                  text:
+                      '€${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                  isVisible: isVisible,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -175,10 +251,12 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
   @override
   Widget build(BuildContext context) {
     final transactions = ref.watch(transactionsProvider);
+    final isVisible = ref.watch(amountVisibilityProvider);
     final now = DateTime.now();
     final data = _buildSeries(transactions, _range, now);
+    final hasLastMonthExpenses = _hasExpensesInLast30Days(transactions, now);
 
-    if (data.values.every((v) => v == 0)) {
+    if (!hasLastMonthExpenses) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
@@ -189,11 +267,7 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
             border: Border.all(color: Colors.grey[300]!),
           ),
           child: Text(
-            _range == _TrendRange.today
-                ? 'Keine Ausgaben heute'
-                : _range == _TrendRange.week
-                ? 'Keine Ausgaben diese Woche'
-                : 'Keine Ausgaben diesen Monat',
+            'Keine Ausgaben in den letzten 30 Tagen',
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.grey),
           ),
@@ -246,14 +320,17 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
                     _StatBox(
                       label: 'Gesamt',
                       value: '€${totalExpenses.toStringAsFixed(0)}',
+                      isVisible: isVisible,
                     ),
                     _StatBox(
                       label: 'Durchschnitt',
                       value: '€${avgExpenses.toStringAsFixed(0)}',
+                      isVisible: isVisible,
                     ),
                     _StatBox(
                       label: 'Max',
                       value: '€${maxAmount.toStringAsFixed(0)}',
+                      isVisible: isVisible,
                     ),
                   ],
                 ),
@@ -264,6 +341,19 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
       ),
     );
   }
+}
+
+bool _hasExpensesInLast30Days(
+  List<TransactionModel> transactions,
+  DateTime now,
+) {
+  final cutoff = now.subtract(const Duration(days: 30));
+  return transactions.any(
+    (t) =>
+        t.type == TransactionType.expense &&
+        t.amount > 0 &&
+        (t.date.isAfter(cutoff) || t.date.isAtSameMomentAs(cutoff)),
+  );
 }
 
 class _TrendSeries {
@@ -278,6 +368,8 @@ _TrendSeries _buildSeries(
   _TrendRange range,
   DateTime now,
 ) {
+  DateTime asDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
   final expenses = transactions
       .where((t) => t.type == TransactionType.expense)
       .toList();
@@ -286,21 +378,23 @@ _TrendSeries _buildSeries(
     case _TrendRange.today:
       final labels = ['0', '4', '8', '12', '16', '20'];
       final values = List<double>.filled(labels.length, 0);
+      final today = asDateOnly(now);
       for (final t in expenses) {
-        if (t.date.year == now.year &&
-            t.date.month == now.month &&
-            t.date.day == now.day) {
+        final txDate = asDateOnly(t.date);
+        if (txDate == today) {
           final bucket = (t.date.hour / 4).floor().clamp(0, 5);
           values[bucket] += t.amount;
         }
       }
       return _TrendSeries(labels: labels, values: values);
     case _TrendRange.week:
-      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final today = asDateOnly(now);
+      final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
       final labels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
       final values = List<double>.filled(labels.length, 0);
       for (final t in expenses) {
-        final dayDiff = t.date.difference(startOfWeek).inDays;
+        final txDate = asDateOnly(t.date);
+        final dayDiff = txDate.difference(startOfWeek).inDays;
         if (dayDiff >= 0 && dayDiff < 7) {
           values[dayDiff] += t.amount;
         }
@@ -512,16 +606,22 @@ class _LineChartPainter extends CustomPainter {
 class _StatBox extends StatelessWidget {
   final String label;
   final String value;
+  final bool isVisible;
 
-  const _StatBox({required this.label, required this.value});
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.isVisible,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
         children: [
-          Text(
-            value,
+          SensitiveText(
+            text: value,
+            isVisible: isVisible,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -542,78 +642,85 @@ class TopCategoriesWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final topCategories = ref.watch(topCategoriesProvider);
+    final isVisible = ref.watch(amountVisibilityProvider);
+    final limitedCategories = topCategories.take(5).toList();
+
+    if (limitedCategories.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          'Keine Kategorien',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Top Kategorien',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-              GestureDetector(
-                onTap: () {},
-                child: Text(
-                  'Alle',
-                  style: TextStyle(fontSize: 12, color: Colors.blue[600]),
-                ),
-              ),
-            ],
+          const Text(
+            'Top Kategorien',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          ...topCategories.map((category) {
-            final color = categoryColors[category.name] ?? Colors.grey;
-            final icon = categoryIcons[category.name] ?? Icons.category_rounded;
+          SizedBox(
+            height: 100,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: limitedCategories.map((category) {
+                final color = categoryColors[category.name] ?? Colors.grey;
+                final icon =
+                    categoryIcons[category.name] ?? Icons.category_rounded;
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: color, width: 2),
+                            color: color.withValues(alpha: 0.1),
+                          ),
+                          child: Icon(icon, color: color, size: 22),
+                        ),
+                        const SizedBox(height: 6),
                         Text(
                           category.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          '€${category.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                        const SizedBox(height: 2),
+                        SensitiveText(
+                          text:
+                              '€${category.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                          isVisible: isVisible,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
+                            fontSize: 10,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    '€${category.amount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -628,6 +735,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentTransactions = ref.watch(recentTransactionsProvider);
+    final isVisible = ref.watch(amountVisibilityProvider);
 
     if (recentTransactions.isEmpty) {
       return const Padding(
@@ -691,8 +799,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            Text(
-                              '${transaction.date.day}.${transaction.date.month}.${transaction.date.year}',
+                            SensitiveText(
+                              text: formatWeekdayOrDate(transaction.date),
+                              isVisible: isVisible,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey[600],
@@ -701,8 +810,10 @@ class RecentTransactionsWidget extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Text(
-                        '${isIncome ? '+' : '-'}€${transaction.amount.toStringAsFixed(2)}',
+                      SensitiveText(
+                        text:
+                            '${isIncome ? '+' : '-'}€${transaction.amount.toStringAsFixed(2)}',
+                        isVisible: isVisible,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -728,6 +839,7 @@ class SavingsGoalWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final savingsGoal = ref.watch(savingsGoalWithBalanceProvider);
     final progress = (savingsGoal.current / savingsGoal.target).clamp(0.0, 1.0);
+    final isVisible = ref.watch(amountVisibilityProvider);
 
     Future<void> openEditDialog() async {
       final nameController = TextEditingController(text: savingsGoal.name);
@@ -846,14 +958,17 @@ class SavingsGoalWidget extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  '€${savingsGoal.current.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')} von €${savingsGoal.target.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                child: SensitiveText(
+                  text:
+                      '€${savingsGoal.current.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')} von €${savingsGoal.target.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                  isVisible: isVisible,
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '${(progress * 100).toStringAsFixed(0)}%',
+              SensitiveText(
+                text: '${(progress * 100).toStringAsFixed(0)}%',
+                isVisible: isVisible,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,

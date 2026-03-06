@@ -30,7 +30,10 @@ class TransactionModel {
     id: m['id'] as int?,
     title: m['title'] as String,
     amount: (m['amount'] as num).toDouble(),
-    date: DateTime.parse(m['date'] as String),
+    date: (() {
+      final parsed = DateTime.parse(m['date'] as String);
+      return parsed.isUtc ? parsed.toLocal() : parsed;
+    })(),
     category: m['category'] as String,
     type: TransactionType.values.byName(m['type'] as String? ?? 'expense'),
   );

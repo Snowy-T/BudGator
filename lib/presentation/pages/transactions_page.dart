@@ -4,6 +4,34 @@ import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
+String _formatWeekdayOrDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+  final endOfWeek = startOfWeek.add(const Duration(days: 7));
+  final dateOnly = DateTime(date.year, date.month, date.day);
+  final isThisWeek =
+      !dateOnly.isBefore(startOfWeek) && dateOnly.isBefore(endOfWeek);
+
+  if (isThisWeek) {
+    const weekdayNames = [
+      'Montag',
+      'Dienstag',
+      'Mittwoch',
+      'Donnerstag',
+      'Freitag',
+      'Samstag',
+      'Sonntag',
+    ];
+    return weekdayNames[dateOnly.weekday - 1];
+  }
+
+  if (dateOnly.year == today.year) {
+    return DateFormat('dd.MMM', 'en_US').format(dateOnly);
+  }
+  return DateFormat('dd.MMM.yyyy', 'en_US').format(dateOnly);
+}
+
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
 
@@ -116,7 +144,7 @@ class _BrowserTabIndicatorPainter extends BoxPainter {
       rect.left + 1,
       rect.top + 1,
       rect.width - 4,
-      rect.height -2,
+      rect.height - 2,
     );
 
     final rRect = RRect.fromRectAndCorners(
@@ -165,28 +193,14 @@ class _TransactionList extends StatelessWidget {
       );
     }
 
+    final sortedTransactions = [...transactions]
+      ..sort((a, b) => b.date.compareTo(a.date));
     final grouped = <String, List<TransactionModel>>{};
 
-  String getGroupKey(DateTime date) {
-  final now = DateTime.now();
-  
-  // Calculate if date is within "current week"
-  // Checks within last 7 days.
-  final difference = now.difference(date).inDays;
-  final isThisWeek = difference >= 0 && difference < 7;
-
-  if (isThisWeek) {
-    return DateFormat('EEEE').format(date); // "Monday"
-  } else {
-    return DateFormat('dd MMM yy').format(date); //  "01 Mar 26"
-  }
-}
-
-//LOOP
-for (final t in transactions) {
-  final key = getGroupKey(t.date);
-  grouped.putIfAbsent(key, () => []).add(t);
-}
+    for (final t in sortedTransactions) {
+      final key = _formatWeekdayOrDate(t.date);
+      grouped.putIfAbsent(key, () => []).add(t);
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),

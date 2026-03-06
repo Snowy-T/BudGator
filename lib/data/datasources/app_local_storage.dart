@@ -14,6 +14,8 @@ final localStorageProvider = Provider<AppLocalStorage>((ref) {
 class AppLocalStorage {
   static const _transactionsKey = 'transactions_v1';
   static const _savingsGoalKey = 'savings_goal_v1';
+  static const _savingsGoalsKey = 'savings_goals_v1';
+  static const _categoryBudgetsKey = 'category_budgets_v1';
 
   AppLocalStorage(this._prefs);
 
@@ -57,5 +59,56 @@ class AppLocalStorage {
   Future<void> saveSavingsGoal({required String name, required double target}) {
     final payload = {'name': name, 'target': target};
     return _prefs.setString(_savingsGoalKey, jsonEncode(payload));
+  }
+
+  List<Map<String, dynamic>> loadSavingsGoals() {
+    final raw = _prefs.getString(_savingsGoalsKey);
+    if (raw == null || raw.isEmpty) {
+      final legacy = loadSavingsGoal();
+      if (legacy == null) return [];
+      return [
+        {
+          'id': 'legacy-${DateTime.now().millisecondsSinceEpoch}',
+          'name': (legacy['name'] as String?) ?? 'Sparziel',
+          'target': ((legacy['target'] as num?) ?? 3000).toDouble(),
+          'current': 0.0,
+          'monthlyContribution': 0.0,
+          'isActive': true,
+        },
+      ];
+    }
+
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveSavingsGoals(List<Map<String, dynamic>> goals) {
+    return _prefs.setString(_savingsGoalsKey, jsonEncode(goals));
+  }
+
+  List<Map<String, dynamic>> loadCategoryBudgets() {
+    final raw = _prefs.getString(_categoryBudgetsKey);
+    if (raw == null || raw.isEmpty) return [];
+
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveCategoryBudgets(List<Map<String, dynamic>> budgets) {
+    return _prefs.setString(_categoryBudgetsKey, jsonEncode(budgets));
   }
 }

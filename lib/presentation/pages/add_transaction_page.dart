@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../controllers/category_budget_provider.dart';
 import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
 
@@ -20,6 +21,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categories = ref.watch(knownCategoriesProvider);
+    final selectedCategory = categories.contains(_category)
+        ? _category
+        : (categories.isNotEmpty ? categories.first : 'General');
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -124,23 +130,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: _category,
-                      items:
-                          [
-                                'General',
-                                'Wohnen',
-                                'Lebensmittel',
-                                'Transport',
-                                'Unterhaltung',
-                                'Shopping',
-                                'Cafe',
-                                'Gehalt',
-                              ]
-                              .map(
-                                (c) =>
-                                    DropdownMenuItem(value: c, child: Text(c)),
-                              )
-                              .toList(),
+                      initialValue: selectedCategory,
+                      items: (categories.isNotEmpty ? categories : ['General'])
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
+                          .toList(),
                       onChanged: (val) {
                         if (val != null) setState(() => _category = val);
                       },
@@ -180,11 +175,28 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       child: ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
+                            final amount = double.tryParse(
+                              _amountController.text
+                                  .replaceAll(',', '.')
+                                  .trim(),
+                            );
+
+                            if (amount == null || amount <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Bitte einen gultigen Betrag eingeben.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
                             final transaction = TransactionModel(
                               title: _titleController.text,
-                              amount: double.parse(_amountController.text),
+                              amount: amount,
                               date: _selectedDate,
-                              category: _category,
+                              category: selectedCategory,
                               type: _type,
                             );
 

@@ -77,15 +77,9 @@ final topCategoriesProvider = Provider<List<TopCategory>>((ref) {
   return sorted.take(5).toList();
 });
 
-// Letzte 6 Transaktionen
+// Letzte 5 Transaktionen
 final recentTransactionsProvider = Provider<List<TransactionModel>>((ref) {
   final transactions = ref.watch(transactionsProvider);
   final sorted = [...transactions]..sort((a, b) => b.date.compareTo(a.date));
-  return sorted.take(6).toList();
-});
-
-// Sparziel Festwert (könnte später auch State sein)
-final savingsGoalProvider = Provider<({double target, double current})>((ref) {
-  final balance = ref.watch(balanceProvider);
-  return (target: 3000, current: balance);
+  return sorted.take(5).toList();
 });

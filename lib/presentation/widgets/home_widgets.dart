@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../controllers/home_calculation_provider.dart' hide savingsGoalProvider;
+import '../controllers/home_calculation_provider.dart';
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
@@ -837,7 +837,22 @@ class SavingsGoalWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final savingsGoal = ref.watch(savingsGoalWithBalanceProvider);
+    final savingsGoal = ref.watch(firstSavingsGoalProvider);
+    if (savingsGoal == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: const Text(
+          'Kein Sparziel aktiv. Du kannst es im Budget-Tab anlegen.',
+        ),
+      );
+    }
+
     final progress = (savingsGoal.current / savingsGoal.target).clamp(0.0, 1.0);
     final isVisible = ref.watch(amountVisibilityProvider);
 
@@ -900,7 +915,7 @@ class SavingsGoalWidget extends ConsumerWidget {
         return;
       }
 
-      ref.read(savingsGoalProvider.notifier).updateGoal(name, target);
+      ref.read(savingsGoalProvider.notifier).updateSingleGoal(name, target);
     }
 
     return Container(

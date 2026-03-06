@@ -4,34 +4,6 @@ import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
-String _formatWeekdayOrDate(DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
-  final endOfWeek = startOfWeek.add(const Duration(days: 7));
-  final dateOnly = DateTime(date.year, date.month, date.day);
-  final isThisWeek =
-      !dateOnly.isBefore(startOfWeek) && dateOnly.isBefore(endOfWeek);
-
-  if (isThisWeek) {
-    const weekdayNames = [
-      'Montag',
-      'Dienstag',
-      'Mittwoch',
-      'Donnerstag',
-      'Freitag',
-      'Samstag',
-      'Sonntag',
-    ];
-    return weekdayNames[dateOnly.weekday - 1];
-  }
-
-  if (dateOnly.year == today.year) {
-    return DateFormat('dd.MMM', 'en_US').format(dateOnly);
-  }
-  return DateFormat('dd.MMM.yyyy', 'en_US').format(dateOnly);
-}
-
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
 
@@ -81,7 +53,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   indicator: _BrowserTabIndicator(color: Colors.white),
-                  labelColor: Color(0xFF10B981),
+                  labelColor: Colors.black87,
                   unselectedLabelColor: Colors.grey[700],
                   labelStyle: const TextStyle(
                     fontSize: 12,
@@ -141,8 +113,8 @@ class _BrowserTabIndicatorPainter extends BoxPainter {
 
     final rect = offset & size;
     final tabRect = Rect.fromLTWH(
-      rect.left + 1,
-      rect.top + 1,
+      rect.left + 2,
+      rect.top + 2,
       rect.width - 4,
       rect.height - 2,
     );
@@ -193,12 +165,10 @@ class _TransactionList extends StatelessWidget {
       );
     }
 
-    final sortedTransactions = [...transactions]
-      ..sort((a, b) => b.date.compareTo(a.date));
     final grouped = <String, List<TransactionModel>>{};
 
-    for (final t in sortedTransactions) {
-      final key = _formatWeekdayOrDate(t.date);
+    for (final t in transactions) {
+      final key = '${t.date.day}.${t.date.month}.${t.date.year}';
       grouped.putIfAbsent(key, () => []).add(t);
     }
 
@@ -233,7 +203,7 @@ class _TransactionGroup extends StatelessWidget {
           Text(
             date,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),

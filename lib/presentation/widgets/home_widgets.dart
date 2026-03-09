@@ -309,7 +309,11 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
               children: [
                 SizedBox(
                   height: 140,
-                  child: _LineChart(values: data.values, labels: data.labels),
+                  child: _LineChart(
+                    values: data.values,
+                    labels: data.labels,
+                    enableHorizontalScroll: _range == _TrendRange.month,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Divider(color: Colors.grey[300]),
@@ -401,19 +405,16 @@ _TrendSeries _buildSeries(
       }
       return _TrendSeries(labels: labels, values: values);
     case _TrendRange.month:
-      final labels = ['W1', 'W2', 'W3', 'W4'];
-      final values = List<double>.filled(labels.length, 0);
+      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      final values = List<double>.filled(daysInMonth, 0);
+      final labels = List<String>.generate(daysInMonth, (index) {
+        final day = index + 1;
+        final showLabel = day == 1 || day % 3 == 0 || day == daysInMonth;
+        return showLabel ? day.toString() : '';
+      });
       for (final t in expenses) {
         if (t.date.year == now.year && t.date.month == now.month) {
-          final day = t.date.day;
-          final bucket = day <= 7
-              ? 0
-              : day <= 14
-              ? 1
-              : day <= 21
-              ? 2
-              : 3;
-          values[bucket] += t.amount;
+          values[t.date.day - 1] += t.amount;
         }
       }
       return _TrendSeries(labels: labels, values: values);
@@ -495,36 +496,62 @@ class _RangeChip extends StatelessWidget {
 class _LineChart extends StatelessWidget {
   final List<double> values;
   final List<String> labels;
+  final bool enableHorizontalScroll;
 
-  const _LineChart({required this.values, required this.labels});
+  const _LineChart({
+    required this.values,
+    required this.labels,
+    this.enableHorizontalScroll = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return CustomPaint(
-          size: Size(constraints.maxWidth, constraints.maxHeight),
-          painter: _LineChartPainter(values: values),
-          child: Column(
-            children: [
-              Expanded(child: Container()),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: labels
-                    .map(
-                      (label) => Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey,
+        final desiredWidth = values.length * 20.0;
+        final chartWidth =
+            enableHorizontalScroll && desiredWidth > constraints.maxWidth
+            ? desiredWidth
+            : constraints.maxWidth;
+
+        final chart = SizedBox(
+          width: chartWidth,
+          child: CustomPaint(
+            size: Size(chartWidth, constraints.maxHeight),
+            painter: _LineChartPainter(
+              values: values,
+              showDots: values.length <= 14,
+            ),
+            child: Column(
+              children: [
+                Expanded(child: Container()),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: labels
+                      .map(
+                        (label) => Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
           ),
+        );
+
+        if (!enableHorizontalScroll) {
+          return chart;
+        }
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: chart,
         );
       },
     );
@@ -533,8 +560,9 @@ class _LineChart extends StatelessWidget {
 
 class _LineChartPainter extends CustomPainter {
   final List<double> values;
+  final bool showDots;
 
-  _LineChartPainter({required this.values});
+  _LineChartPainter({required this.values, required this.showDots});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -584,22 +612,24 @@ class _LineChartPainter extends CustomPainter {
     }
     canvas.drawPath(path, paintLine);
 
-    for (final point in points) {
-      canvas.drawCircle(point, 3.5, paintDot);
-      canvas.drawCircle(
-        point,
-        5,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill,
-      );
-      canvas.drawCircle(point, 3.5, paintDot);
+    if (showDots) {
+      for (final point in points) {
+        canvas.drawCircle(point, 3.5, paintDot);
+        canvas.drawCircle(
+          point,
+          5,
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.fill,
+        );
+        canvas.drawCircle(point, 3.5, paintDot);
+      }
     }
   }
 
   @override
   bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
-    return oldDelegate.values != values;
+    return oldDelegate.values != values || oldDelegate.showDots != showDots;
   }
 }
 

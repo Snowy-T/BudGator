@@ -1,5 +1,6 @@
 import 'package:budgator/presentation/pages/transactions_page.dart';
 import 'package:budgator/presentation/pages/budget_page.dart';
+import 'package:budgator/presentation/pages/stats_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +24,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       const TransactionsPage(),
       const BudgetPage(),
-      const Center(child: Text('Statistik Tab')),
+      const StatsPage(),
     ];
 
     return Scaffold(

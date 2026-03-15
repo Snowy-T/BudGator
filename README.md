@@ -2,6 +2,25 @@
 # BudGator
 Budgeting - one bite at a time
 
+gantt
+    title BudGator Entwicklungsverlauf
+    dateFormat  DD.MM.
+    axisFormat  %d.%m.
+
+    section Abgeschlossen
+    Setup & Struktur          :done, des1, 01.03., 03.03.
+    UI Grundgerüst            :done, des2, 04.03., 07.03.
+    Datenmodelle              :done, des3, 08.03., 10.03.
+
+    section In Arbeit
+    Datenbank Integration     :active, des4, 11.03., 18.03.
+    State Management          :active, des5, 15.03., 22.03.
+
+    section Geplant
+    Features & Validierung    :des6, 23.03., 27.03.
+    Statistiken (Charts)      :des7, 02.04., 08.04.
+    Finaler Build             :des8, 17.04., 20.04.
+
 ## Build an IPA for Sideloadly
 
 Sideloadly installs `.ipa` files on iPhone, but Flutter iOS builds require macOS + Xcode.

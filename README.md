@@ -3,23 +3,24 @@
 Budgeting - one bite at a time
 
 gantt
-    title BudGator Entwicklungsverlauf
-    dateFormat  DD.MM.
+    title 🐊 BudGator Projektstatus
+    dateFormat  YYYY-MM-DD
     axisFormat  %d.%m.
 
-    section Abgeschlossen
-    Setup & Struktur          :done, des1, 01.03., 03.03.
-    UI Grundgerüst            :done, des2, 04.03., 07.03.
-    Datenmodelle              :done, des3, 08.03., 10.03.
+    section Erledigt
+    Projekt-Setup & Flutter Umgebung :done, des1, 2026-03-01, 2026-03-03
+    Grundlegende UI-Struktur         :done, des2, 2026-03-04, 2026-03-07
+    Datenmodelle (Models)            :done, des3, 2026-03-08, 2026-03-10
 
     section In Arbeit
-    Datenbank Integration     :active, des4, 11.03., 18.03.
-    State Management          :active, des5, 15.03., 22.03.
+    Datenbank (sqflite) Integration  :active, des4, 2026-03-11, 2026-03-18
+    State Management (Provider)      :active, des5, 2026-03-15, 2026-03-22
 
     section Geplant
-    Features & Validierung    :des6, 23.03., 27.03.
-    Statistiken (Charts)      :des7, 02.04., 08.04.
-    Finaler Build             :des8, 17.04., 20.04.
+    Input-Validierung & Formulare    :2026-03-23, 2026-03-27
+    Statistik-Dashboard (Charts)     :2026-04-02, 2026-04-08
+    Export-Funktion (CSV/PDF)        :2026-04-09, 2026-04-12
+    Finaler Build & Testing          :2026-04-17, 2026-04-20
 
 ## Build an IPA for Sideloadly
 

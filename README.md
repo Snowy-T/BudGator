@@ -1,4 +1,3 @@
-
 # BudGator
 
 Budgeting, one bite at a time.
@@ -117,6 +116,7 @@ The current UX is primarily tailored to mobile usage.
 - Navigation currently uses GoRouter with a small route surface
 - The app title is set to `BudGator`
 - SharedPreferences is injected at startup through a Riverpod provider override
+
 
 ## Build an IPA for Sideloadly
 

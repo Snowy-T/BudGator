@@ -16,6 +16,7 @@ class AppLocalStorage {
   static const _savingsGoalKey = 'savings_goal_v1';
   static const _savingsGoalsKey = 'savings_goals_v1';
   static const _categoryBudgetsKey = 'category_budgets_v1';
+  static const _monthlyTotalBudgetsKey = 'monthly_total_budgets_v1';
 
   AppLocalStorage(this._prefs);
 
@@ -110,5 +111,23 @@ class AppLocalStorage {
 
   Future<void> saveCategoryBudgets(List<Map<String, dynamic>> budgets) {
     return _prefs.setString(_categoryBudgetsKey, jsonEncode(budgets));
+  }
+
+  Map<String, double> loadMonthlyTotalBudgets() {
+    final raw = _prefs.getString(_monthlyTotalBudgetsKey);
+    if (raw == null || raw.isEmpty) return {};
+
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(key, ((value as num?) ?? 0).toDouble()),
+      );
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveMonthlyTotalBudgets(Map<String, double> values) {
+    return _prefs.setString(_monthlyTotalBudgetsKey, jsonEncode(values));
   }
 }

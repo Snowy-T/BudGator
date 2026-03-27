@@ -70,6 +70,60 @@ class CategoryBudgetProgress {
   bool get isNearLimit => progress >= budget.alertThreshold && !isOverLimit;
 }
 
+class MonthlyBudgetSummary {
+  final double totalBudget;
+  final double totalPlannedLimits;
+  final double totalSpent;
+
+  const MonthlyBudgetSummary({
+    required this.totalBudget,
+    required this.totalPlannedLimits,
+    required this.totalSpent,
+  });
+
+  double get remainingTotalBudget => totalBudget - totalSpent;
+
+  double get availableToPlan => totalBudget - totalPlannedLimits;
+
+  bool get hasTotalBudget => totalBudget > 0;
+
+  bool get isOverPlanned => hasTotalBudget && totalPlannedLimits > totalBudget;
+
+  bool get isOverSpent => hasTotalBudget && totalSpent > totalBudget;
+}
+
+String _monthKey(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  return '${date.year}-$month';
+}
+
+class MonthlyTotalBudgetNotifier extends StateNotifier<double> {
+  MonthlyTotalBudgetNotifier(this._storage) : super(0) {
+    _load();
+  }
+
+  final AppLocalStorage _storage;
+  Map<String, double> _allValues = {};
+
+  String get _currentMonthKey => _monthKey(DateTime.now());
+
+  void _load() {
+    _allValues = _storage.loadMonthlyTotalBudgets();
+    state = _allValues[_currentMonthKey] ?? 0;
+  }
+
+  Future<void> _save() {
+    return _storage.saveMonthlyTotalBudgets(_allValues);
+  }
+
+  void setBudgetForCurrentMonth(double amount) {
+    if (amount < 0) return;
+    _allValues = {..._allValues, _currentMonthKey: amount};
+    state = amount;
+    unawaited(_save());
+  }
+}
+
 class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
   CategoryBudgetNotifier(this._storage) : super(const []) {
     _load();
@@ -105,12 +159,12 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
     return _storage.saveCategoryBudgets(state.map((e) => e.toMap()).toList());
   }
 
-  void addCategory(String name, {double monthlyLimit = 0}) {
-    if (name.trim().isEmpty || monthlyLimit < 0) return;
+  bool addCategory(String name, {double monthlyLimit = 0}) {
+    if (name.trim().isEmpty || monthlyLimit < 0) return false;
 
     final normalized = name.trim().toLowerCase();
     final exists = state.any((e) => e.name.toLowerCase() == normalized);
-    if (exists) return;
+    if (exists) return false;
 
     state = [
       ...state,
@@ -121,27 +175,110 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
       ),
     ];
     unawaited(_save());
+    return true;
   }
 
-  void setLimit(String id, double monthlyLimit) {
-    if (monthlyLimit < 0) return;
+  bool setLimit(String id, double monthlyLimit) {
+    if (monthlyLimit < 0) return false;
+
+    var found = false;
+    final updated = <CategoryBudget>[];
+    for (final budget in state) {
+      if (budget.id == id) {
+        found = true;
+        updated.add(budget.copyWith(monthlyLimit: monthlyLimit));
+      } else {
+        updated.add(budget);
+      }
+    }
+
+    if (!found) return false;
+    state = updated;
+    unawaited(_save());
+    return true;
+  }
+
+  bool renameCategory(String id, String name) {
+    if (name.trim().isEmpty) return false;
+
+    final normalized = name.trim().toLowerCase();
+    final exists = state.any(
+      (e) => e.id != id && e.name.toLowerCase() == normalized,
+    );
+    if (exists) return false;
+
+    var found = false;
+    final updated = <CategoryBudget>[];
+    for (final budget in state) {
+      if (budget.id == id) {
+        found = true;
+        updated.add(budget.copyWith(name: name.trim()));
+      } else {
+        updated.add(budget);
+      }
+    }
+
+    if (!found) return false;
+    state = updated;
+    unawaited(_save());
+    return true;
+  }
+
+  bool transferLimit({
+    required String sourceId,
+    required String targetId,
+    required double amount,
+  }) {
+    if (sourceId == targetId || amount <= 0) return false;
+
+    CategoryBudget? source;
+    CategoryBudget? target;
+    for (final budget in state) {
+      if (budget.id == sourceId) source = budget;
+      if (budget.id == targetId) target = budget;
+    }
+
+    if (source == null || target == null) return false;
+    if (source.monthlyLimit < amount) return false;
+
     state = [
       for (final budget in state)
-        if (budget.id == id)
-          budget.copyWith(monthlyLimit: monthlyLimit)
+        if (budget.id == sourceId)
+          budget.copyWith(monthlyLimit: budget.monthlyLimit - amount)
+        else if (budget.id == targetId)
+          budget.copyWith(monthlyLimit: budget.monthlyLimit + amount)
         else
           budget,
     ];
     unawaited(_save());
+    return true;
   }
 
-  void renameCategory(String id, String name) {
-    if (name.trim().isEmpty) return;
+  bool removeFromCategoryLimit({
+    required String sourceId,
+    required double amount,
+  }) {
+    if (amount <= 0) return false;
+
+    CategoryBudget? source;
+    for (final budget in state) {
+      if (budget.id == sourceId) {
+        source = budget;
+        break;
+      }
+    }
+
+    if (source == null || source.monthlyLimit < amount) return false;
+
     state = [
       for (final budget in state)
-        if (budget.id == id) budget.copyWith(name: name.trim()) else budget,
+        if (budget.id == sourceId)
+          budget.copyWith(monthlyLimit: budget.monthlyLimit - amount)
+        else
+          budget,
     ];
     unawaited(_save());
+    return true;
   }
 
   void deleteCategory(String id) {
@@ -153,6 +290,11 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
 final categoryBudgetProvider =
     StateNotifierProvider<CategoryBudgetNotifier, List<CategoryBudget>>((ref) {
       return CategoryBudgetNotifier(ref.read(localStorageProvider));
+    });
+
+final monthlyTotalBudgetProvider =
+    StateNotifierProvider<MonthlyTotalBudgetNotifier, double>((ref) {
+      return MonthlyTotalBudgetNotifier(ref.read(localStorageProvider));
     });
 
 DateTime _monthStart(DateTime date) => DateTime(date.year, date.month, 1);
@@ -196,4 +338,16 @@ final knownCategoriesProvider = Provider<List<String>>((ref) {
 
   final combined = {...budgets, ...txCategories}.toList()..sort();
   return combined;
+});
+
+final monthlyBudgetSummaryProvider = Provider<MonthlyBudgetSummary>((ref) {
+  final totalBudget = ref.watch(monthlyTotalBudgetProvider);
+  final budgets = ref.watch(categoryBudgetProvider);
+  final progress = ref.watch(categoryBudgetProgressProvider);
+
+  return MonthlyBudgetSummary(
+    totalBudget: totalBudget,
+    totalPlannedLimits: budgets.fold(0.0, (sum, b) => sum + b.monthlyLimit),
+    totalSpent: progress.fold(0.0, (sum, p) => sum + p.spent),
+  );
 });

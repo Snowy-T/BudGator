@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../controllers/category_budget_provider.dart';
 import '../controllers/home_calculation_provider.dart';
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
@@ -98,6 +99,7 @@ class BalanceCard extends ConsumerWidget {
     final balance = ref.watch(balanceProvider);
     final income = ref.watch(totalIncomeProvider);
     final expenses = ref.watch(totalExpensesProvider);
+    final monthlySummary = ref.watch(monthlyBudgetSummaryProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
 
     return Container(
@@ -149,6 +151,7 @@ class BalanceCard extends ConsumerWidget {
               fontSize: 36,
               fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
           Row(
@@ -172,6 +175,16 @@ class BalanceCard extends ConsumerWidget {
               ),
             ],
           ),
+          if (monthlySummary.hasTotalBudget) ...[
+            const SizedBox(height: 12),
+            _InlineAmount(
+              label: 'Monatsbudget Rest',
+              amount: monthlySummary.remainingTotalBudget,
+              icon: Icons.wallet_rounded,
+              isVisible: isVisible,
+              isMonthlyBudget: true,
+            ),
+          ],
         ],
       ),
     );
@@ -183,22 +196,32 @@ class _InlineAmount extends StatelessWidget {
   final double amount;
   final IconData icon;
   final bool isVisible;
+  final bool isMonthlyBudget;
 
   const _InlineAmount({
     required this.label,
     required this.amount,
     required this.icon,
     required this.isVisible,
+    this.isMonthlyBudget = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isOverBudget = isMonthlyBudget && amount < 0;
+    final bgColor = isOverBudget
+        ? Colors.red.withValues(alpha: 0.22)
+        : Colors.white.withValues(alpha: 0.18);
+    final borderCol = isOverBudget
+        ? Colors.red.withValues(alpha: 0.4)
+        : Colors.white.withValues(alpha: 0.25);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        border: Border.all(color: borderCol),
       ),
       child: Row(
         children: [
@@ -863,7 +886,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
 }
 
 class SavingsGoalWidget extends ConsumerWidget {
-  const SavingsGoalWidget({super.key});
+  const SavingsGoalWidget({super.key, this.onCreateGoalTap});
+
+  final VoidCallback? onCreateGoalTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -871,14 +896,21 @@ class SavingsGoalWidget extends ConsumerWidget {
     if (savingsGoal == null) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child: const Text(
-          'Kein Sparziel aktiv. Du kannst es im Budget-Tab anlegen.',
+        child: Row(
+          children: [
+            const Expanded(child: Text('Noch kein Sparziel aktiv.')),
+            TextButton.icon(
+              onPressed: onCreateGoalTap,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Sparziel erstellen'),
+            ),
+          ],
         ),
       );
     }

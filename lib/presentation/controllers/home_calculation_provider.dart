@@ -59,7 +59,9 @@ class TopCategory {
 final topCategoriesProvider = Provider<List<TopCategory>>((ref) {
   final transactions = ref.watch(transactionsProvider);
   final expenses = transactions
-      .where((t) => t.type == TransactionType.expense)
+      .where(
+        (t) => t.type == TransactionType.expense && t.category != 'Sparziel',
+      )
       .toList();
 
   final grouped = <String, double>{};

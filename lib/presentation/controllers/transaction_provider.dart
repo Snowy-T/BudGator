@@ -52,4 +52,34 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
     state = state.map((t) => t.id == updated.id ? updated : t).toList();
     unawaited(_storage.saveTransactions(state));
   }
+
+  void renameCategory(String oldName, String newName) {
+    final oldNormalized = oldName.trim().toLowerCase();
+    final replacement = newName.trim();
+    if (oldNormalized.isEmpty || replacement.isEmpty) return;
+
+    var changed = false;
+    final updated = <TransactionModel>[];
+    for (final tx in state) {
+      if (tx.category.trim().toLowerCase() == oldNormalized) {
+        changed = true;
+        updated.add(
+          TransactionModel(
+            id: tx.id,
+            title: tx.title,
+            amount: tx.amount,
+            date: tx.date,
+            category: replacement,
+            type: tx.type,
+          ),
+        );
+      } else {
+        updated.add(tx);
+      }
+    }
+
+    if (!changed) return;
+    state = updated;
+    unawaited(_storage.saveTransactions(state));
+  }
 }

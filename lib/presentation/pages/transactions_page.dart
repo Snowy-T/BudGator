@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../controllers/transaction_provider.dart';
+
 import '../../data/models/transaction_model.dart';
+import '../controllers/transaction_provider.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
@@ -18,6 +19,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -72,14 +79,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _TransactionList(transactions),
+          _TransactionList(transactions: transactions),
           _TransactionList(
-            transactions
+            transactions: transactions
                 .where((t) => t.type == TransactionType.income)
                 .toList(),
           ),
           _TransactionList(
-            transactions
+            transactions: transactions
                 .where((t) => t.type == TransactionType.expense)
                 .toList(),
           ),
@@ -141,7 +148,7 @@ class _BrowserTabIndicatorPainter extends BoxPainter {
 class _TransactionList extends StatelessWidget {
   final List<TransactionModel> transactions;
 
-  const _TransactionList(this.transactions);
+  const _TransactionList({required this.transactions});
 
   @override
   Widget build(BuildContext context) {
@@ -165,17 +172,31 @@ class _TransactionList extends StatelessWidget {
     }
 
     final grouped = <String, List<TransactionModel>>{};
-
-    for (final t in transactions) {
-      final key = '${t.date.day}.${t.date.month}.${t.date.year}';
-      grouped.putIfAbsent(key, () => []).add(t);
+    for (final tx in transactions) {
+      final key = '${tx.date.day}.${tx.date.month}.${tx.date.year}';
+      grouped.putIfAbsent(key, () => []).add(tx);
     }
+
+    final keys = grouped.keys.toList()
+      ..sort((a, b) {
+        DateTime parse(String key) {
+          final parts = key.split('.');
+          return DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+        }
+
+        return parse(b).compareTo(parse(a));
+      });
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      children: grouped.entries.map((entry) {
-        return _TransactionGroup(date: entry.key, items: entry.value);
-      }).toList(),
+      children: [
+        for (final key in keys)
+          _TransactionGroup(date: key, items: grouped[key]!),
+      ],
     );
   }
 }
@@ -208,20 +229,20 @@ class _TransactionGroup extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...items.map((t) => _TransactionTile(t)),
+          ...items.map((tx) => _TransactionTile(transaction: tx)),
         ],
       ),
     );
   }
 }
 
-class _TransactionTile extends StatelessWidget {
+class _TransactionTile extends ConsumerWidget {
   final TransactionModel transaction;
 
-  const _TransactionTile(this.transaction);
+  const _TransactionTile({required this.transaction});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isIncome = transaction.type == TransactionType.income;
     final color = isIncome ? Colors.green : Colors.red;
     final icon = isIncome
@@ -255,22 +276,204 @@ class _TransactionTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${transaction.category} • $time',
+                  '${transaction.category} - $time',
                   style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
-          Text(
-            '${isIncome ? '+' : '-'}€${transaction.amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isIncome ? '+' : '-'}EUR ${transaction.amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.more_vert_rounded, size: 18),
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    await _openEditDialog(context, ref);
+                    return;
+                  }
+
+                  if (value == 'delete') {
+                    final shouldDelete = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Transaktion loschen'),
+                        content: const Text(
+                          'Mochtest du diese Transaktion wirklich loschen?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Abbrechen'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Loschen'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldDelete == true && transaction.id != null) {
+                      ref
+                          .read(transactionsProvider.notifier)
+                          .remove(transaction.id!);
+                    }
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
+                  PopupMenuItem(value: 'delete', child: Text('Loschen')),
+                ],
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openEditDialog(BuildContext context, WidgetRef ref) async {
+    final titleController = TextEditingController(text: transaction.title);
+    final amountController = TextEditingController(
+      text: transaction.amount.toStringAsFixed(2),
+    );
+    final categoryController = TextEditingController(
+      text: transaction.category,
+    );
+    var selectedType = transaction.type;
+    var selectedDate = transaction.date;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Transaktion bearbeiten'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Titel'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(labelText: 'Betrag'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: categoryController,
+                  decoration: const InputDecoration(labelText: 'Kategorie'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<TransactionType>(
+                  initialValue: selectedType,
+                  items: const [
+                    DropdownMenuItem(
+                      value: TransactionType.income,
+                      child: Text('Einnahme'),
+                    ),
+                    DropdownMenuItem(
+                      value: TransactionType.expense,
+                      child: Text('Ausgabe'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setModalState(() {
+                      selectedType = value;
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Typ'),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Datum: ${selectedDate.day}.${selectedDate.month}.${selectedDate.year}',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked == null) return;
+                        setModalState(() {
+                          selectedDate = DateTime(
+                            picked.year,
+                            picked.month,
+                            picked.day,
+                            selectedDate.hour,
+                            selectedDate.minute,
+                          );
+                        });
+                      },
+                      child: const Text('Wahlen'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Abbrechen'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Speichern'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final title = titleController.text.trim();
+    final category = categoryController.text.trim();
+    final amount = double.tryParse(
+      amountController.text.replaceAll(',', '.').trim(),
+    );
+
+    if (title.isEmpty || category.isEmpty || amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte gultige Werte eingeben.')),
+      );
+      return;
+    }
+
+    ref
+        .read(transactionsProvider.notifier)
+        .update(
+          TransactionModel(
+            id: transaction.id,
+            title: title,
+            amount: amount,
+            date: selectedDate,
+            category: category,
+            type: selectedType,
+          ),
+        );
   }
 }

@@ -4,6 +4,9 @@ import 'package:budgator/presentation/pages/stats_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/transaction_model.dart';
+import '../controllers/savings_goal_provider.dart';
+import '../controllers/transaction_provider.dart';
 import '../widgets/home_widgets.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -16,11 +19,81 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
 
+  String _monthKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    return '${date.year}-$month';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final now = DateTime.now();
+      final currentMonthKey = _monthKey(now);
+      final applied = ref
+          .read(savingsGoalProvider.notifier)
+          .applyMonthlyContributionIfDue();
+
+      bool hasMonthlyTx(String goalName, List<TransactionModel> txs) {
+        return txs.any(
+          (tx) =>
+              tx.type == TransactionType.expense &&
+              tx.category == 'Sparziel' &&
+              tx.date.year == now.year &&
+              tx.date.month == now.month &&
+              tx.title == '$goalName-Monatsbeitrag',
+        );
+      }
+
+      for (final item in applied) {
+        final txs = ref.read(transactionsProvider);
+        if (hasMonthlyTx(item.goalName, txs)) continue;
+
+        ref
+            .read(transactionsProvider.notifier)
+            .add(
+              TransactionModel(
+                title: '${item.goalName}-Monatsbeitrag',
+                amount: item.amount,
+                date: now,
+                category: 'Sparziel',
+                type: TransactionType.expense,
+              ),
+            );
+      }
+
+      final goals = ref.read(savingsGoalProvider);
+      for (final goal in goals) {
+        if (!goal.isActive ||
+            goal.monthlyContribution <= 0 ||
+            goal.lastAutoContributionMonth != currentMonthKey) {
+          continue;
+        }
+
+        final txs = ref.read(transactionsProvider);
+        if (hasMonthlyTx(goal.name, txs)) continue;
+
+        ref
+            .read(transactionsProvider.notifier)
+            .add(
+              TransactionModel(
+                title: '${goal.name}-Monatsbeitrag',
+                amount: goal.monthlyContribution,
+                date: now,
+                category: 'Sparziel',
+                type: TransactionType.expense,
+              ),
+            );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _HomeScreenContent(
         onShowAllTransactions: () => setState(() => _currentIndex = 1),
+        onCreateSavingsGoal: () => setState(() => _currentIndex = 2),
       ),
       const TransactionsPage(),
       const BudgetPage(),
@@ -154,8 +227,12 @@ class _NavItem extends StatelessWidget {
 
 class _HomeScreenContent extends StatelessWidget {
   final VoidCallback onShowAllTransactions;
+  final VoidCallback onCreateSavingsGoal;
 
-  const _HomeScreenContent({required this.onShowAllTransactions});
+  const _HomeScreenContent({
+    required this.onShowAllTransactions,
+    required this.onCreateSavingsGoal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +257,7 @@ class _HomeScreenContent extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Sparziel
-          const SavingsGoalWidget(),
+          SavingsGoalWidget(onCreateGoalTap: onCreateSavingsGoal),
           const SizedBox(height: 24),
         ],
       ),

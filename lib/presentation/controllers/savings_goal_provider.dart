@@ -11,6 +11,7 @@ class SavingsGoal {
   final double current;
   final double monthlyContribution;
   final bool isActive;
+  final String? lastAutoContributionMonth;
 
   const SavingsGoal({
     required this.id,
@@ -19,6 +20,7 @@ class SavingsGoal {
     required this.current,
     required this.monthlyContribution,
     required this.isActive,
+    this.lastAutoContributionMonth,
   });
 
   SavingsGoal copyWith({
@@ -28,6 +30,7 @@ class SavingsGoal {
     double? current,
     double? monthlyContribution,
     bool? isActive,
+    String? lastAutoContributionMonth,
   }) {
     return SavingsGoal(
       id: id ?? this.id,
@@ -36,6 +39,8 @@ class SavingsGoal {
       current: current ?? this.current,
       monthlyContribution: monthlyContribution ?? this.monthlyContribution,
       isActive: isActive ?? this.isActive,
+      lastAutoContributionMonth:
+          lastAutoContributionMonth ?? this.lastAutoContributionMonth,
     );
   }
 
@@ -46,6 +51,7 @@ class SavingsGoal {
     'current': current,
     'monthlyContribution': monthlyContribution,
     'isActive': isActive,
+    'lastAutoContributionMonth': lastAutoContributionMonth,
   };
 
   factory SavingsGoal.fromMap(Map<String, dynamic> map) {
@@ -59,8 +65,26 @@ class SavingsGoal {
       monthlyContribution: ((map['monthlyContribution'] as num?) ?? 0)
           .toDouble(),
       isActive: (map['isActive'] as bool?) ?? true,
+      lastAutoContributionMonth: map['lastAutoContributionMonth'] as String?,
     );
   }
+}
+
+String _monthKey(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  return '${date.year}-$month';
+}
+
+class AppliedSavingsContribution {
+  final String goalId;
+  final String goalName;
+  final double amount;
+
+  const AppliedSavingsContribution({
+    required this.goalId,
+    required this.goalName,
+    required this.amount,
+  });
 }
 
 class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
@@ -160,6 +184,86 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
     unawaited(_save());
   }
 
+  double addCurrentToGoal(String id, double amount) {
+    if (amount <= 0) return 0;
+
+    var changed = false;
+    var appliedAmount = 0.0;
+    final updated = <SavingsGoal>[];
+    for (final goal in state) {
+      if (goal.id == id) {
+        final available = (goal.target - goal.current)
+            .clamp(0, amount)
+            .toDouble();
+        if (available <= 0) {
+          updated.add(goal);
+          continue;
+        }
+
+        changed = true;
+        appliedAmount = available;
+        updated.add(
+          goal.copyWith(
+            current: (goal.current + available).clamp(0, goal.target),
+          ),
+        );
+      } else {
+        updated.add(goal);
+      }
+    }
+
+    if (!changed) return 0;
+    state = updated;
+    unawaited(_save());
+    return appliedAmount;
+  }
+
+  List<AppliedSavingsContribution> applyMonthlyContributionIfDue({
+    DateTime? now,
+  }) {
+    final currentDate = now ?? DateTime.now();
+    final monthKey = _monthKey(currentDate);
+
+    final applied = <AppliedSavingsContribution>[];
+    final updated = <SavingsGoal>[];
+    for (final goal in state) {
+      if (!goal.isActive ||
+          goal.monthlyContribution <= 0 ||
+          goal.current >= goal.target ||
+          goal.lastAutoContributionMonth == monthKey) {
+        updated.add(goal);
+        continue;
+      }
+
+      final available = (goal.target - goal.current)
+          .clamp(0, goal.monthlyContribution)
+          .toDouble();
+      if (available <= 0) {
+        updated.add(goal);
+        continue;
+      }
+
+      updated.add(
+        goal.copyWith(
+          current: (goal.current + available).clamp(0, goal.target),
+          lastAutoContributionMonth: monthKey,
+        ),
+      );
+      applied.add(
+        AppliedSavingsContribution(
+          goalId: goal.id,
+          goalName: goal.name,
+          amount: available,
+        ),
+      );
+    }
+
+    if (applied.isEmpty) return const [];
+    state = updated;
+    unawaited(_save());
+    return applied;
+  }
+
   // Compatibility method for older call-sites.
   void updateSingleGoal(String name, double target) {
     if (state.isEmpty) {
@@ -187,6 +291,8 @@ final savingsGoalProvider =
 
 final firstSavingsGoalProvider = Provider<SavingsGoal?>((ref) {
   final goals = ref.watch(savingsGoalProvider);
-  if (goals.isEmpty) return null;
-  return goals.first;
+  for (final goal in goals) {
+    if (goal.isActive) return goal;
+  }
+  return null;
 });

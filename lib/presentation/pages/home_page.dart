@@ -11,6 +11,7 @@ import '../../data/models/transaction_model.dart';
 import '../controllers/category_budget_provider.dart';
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
+import '../controllers/theme_mode_provider.dart';
 import '../widgets/home_widgets.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -175,6 +176,70 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
+  Future<void> _openSettingsSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final themeMode = ref.watch(themeModeProvider);
+          final isDarkMode = themeMode == ThemeMode.dark;
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Einstellungen',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    value: isDarkMode,
+                    onChanged: (value) {
+                      ref
+                          .read(themeModeProvider.notifier)
+                          .setThemeMode(
+                            value ? ThemeMode.dark : ThemeMode.light,
+                          );
+                    },
+                    title: const Text('Darkmode'),
+                    subtitle: Text(
+                      themeMode == ThemeMode.system
+                          ? 'Folgt der Geräteeinstellung'
+                          : isDarkMode
+                          ? 'Aktiviert'
+                          : 'Deaktiviert',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.refresh_rounded),
+                    title: const Text('Darkmode zurücksetzen'),
+                    subtitle: const Text('Zurück zum Systemmodus'),
+                    onTap: () async {
+                      await ref
+                          .read(themeModeProvider.notifier)
+                          .resetThemeMode();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _onGooglePayNotification(
     GooglePayNotificationEvent event,
   ) async {
@@ -332,6 +397,8 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final List<Widget> pages = [
       _HomeScreenContent(
         onShowAllTransactions: () => setState(() => _currentIndex = 1),
@@ -345,13 +412,24 @@ class _HomePageState extends ConsumerState<HomePage>
     return Scaffold(
       appBar: _currentIndex == 0
           ? AppBar(
-              title: const Text(
+              centerTitle: false,
+              titleSpacing: 0,
+              leadingWidth: 56,
+              leading: IconButton(
+                tooltip: 'Einstellungen',
+                onPressed: _openSettingsSheet,
+                icon: const Icon(Icons.settings_rounded),
+              ),
+              title: Text(
                 'Budgator',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
               elevation: 0,
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: theme.appBarTheme.backgroundColor,
+              foregroundColor: colorScheme.onSurface,
             )
           : null,
       body: pages[_currentIndex],

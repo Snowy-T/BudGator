@@ -30,17 +30,19 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   @override
   Widget build(BuildContext context) {
     final transactions = ref.watch(transactionsProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Transaktionen',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(66),
           child: Padding(
@@ -49,7 +51,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
               width: double.infinity,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Padding(
@@ -158,9 +160,11 @@ class _TransactionList extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: const Text(
             'Keine Transaktionen',
@@ -213,9 +217,9 @@ class _TransactionGroup extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

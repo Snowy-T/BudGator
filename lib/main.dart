@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'data/datasources/app_local_storage.dart';
+import 'presentation/controllers/theme_mode_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +23,19 @@ class BudGatorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'BudGator',
-      theme: AppTheme.lightTheme,
-      routerConfig: appRouter,
+    return Consumer(
+      builder: (context, ref, child) {
+        final themeMode = ref.watch(themeModeProvider);
+
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'BudGator',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeMode,
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

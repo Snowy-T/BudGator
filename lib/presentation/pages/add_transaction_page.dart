@@ -285,20 +285,22 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(knownCategoriesProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final selectedCategory = categories.contains(_category)
         ? _category
         : (categories.isNotEmpty ? categories.first : 'General');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Transaktion hinzufügen',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -348,9 +350,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Form(
                 key: _formKey,

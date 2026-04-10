@@ -17,6 +17,7 @@ class AppLocalStorage {
   static const _savingsGoalsKey = 'savings_goals_v1';
   static const _categoryBudgetsKey = 'category_budgets_v1';
   static const _monthlyTotalBudgetsKey = 'monthly_total_budgets_v1';
+  static const _themeModeKey = 'theme_mode_v1';
 
   AppLocalStorage(this._prefs);
 
@@ -129,5 +130,24 @@ class AppLocalStorage {
 
   Future<void> saveMonthlyTotalBudgets(Map<String, double> values) {
     return _prefs.setString(_monthlyTotalBudgetsKey, jsonEncode(values));
+  }
+
+  ThemeMode loadThemeMode() {
+    final raw = _prefs.getString(_themeModeKey);
+    if (raw == null || raw.isEmpty) return ThemeMode.system;
+
+    for (final mode in ThemeMode.values) {
+      if (mode.name == raw) return mode;
+    }
+
+    return ThemeMode.system;
+  }
+
+  Future<void> saveThemeMode(ThemeMode mode) {
+    return _prefs.setString(_themeModeKey, mode.name);
+  }
+
+  Future<void> resetThemeMode() {
+    return _prefs.remove(_themeModeKey);
   }
 }

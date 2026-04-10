@@ -4,10 +4,34 @@ class AppTheme {
   static const Color primary = Color(0xFF2E7D32);
 
   static final ThemeData lightTheme = ThemeData(
-    primaryColor: primary,
-    colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green)
-        .copyWith(primary: primary),
-    appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-    scaffoldBackgroundColor: Colors.white,
+    brightness: Brightness.light,
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.light,
+    ),
+    appBarTheme: const AppBarTheme(
+      centerTitle: true,
+      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+    ),
+    scaffoldBackgroundColor: const Color(0xFFF5F7F5),
+  );
+
+  static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.dark,
+    ),
+    appBarTheme: const AppBarTheme(
+      centerTitle: true,
+      elevation: 0,
+      backgroundColor: Color(0xFF101513),
+      foregroundColor: Colors.white,
+    ),
+    scaffoldBackgroundColor: const Color(0xFF0B0F0D),
   );
 }

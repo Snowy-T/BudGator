@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:budgator/presentation/pages/transactions_page.dart';
 import 'package:budgator/presentation/pages/budget_page.dart';
 import 'package:budgator/presentation/pages/stats_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/services/google_pay_notification_service.dart';
 import '../../data/models/transaction_model.dart';
+import '../controllers/category_budget_provider.dart';
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
 import '../widgets/home_widgets.dart';
@@ -16,8 +20,13 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
+  StreamSubscription<GooglePayNotificationEvent>? _googlePaySubscription;
+  final Set<String> _handledNotificationKeys = <String>{};
+  bool _hasAskedForNotificationAccess = false;
+  bool _isConsumingPendingEvents = false;
 
   String _monthKey(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
@@ -27,6 +36,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final now = DateTime.now();
       final currentMonthKey = _monthKey(now);
@@ -85,7 +95,239 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             );
       }
+
+      unawaited(_setupGooglePayNotifications());
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_setupGooglePayNotifications(showPrompt: false));
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_googlePaySubscription?.cancel());
+    super.dispose();
+  }
+
+  Future<void> _setupGooglePayNotifications({bool showPrompt = true}) async {
+    final service = GooglePayNotificationService.instance;
+    final granted = await service.isNotificationAccessGranted();
+    if (!mounted) return;
+
+    if (!granted) {
+      if (showPrompt && !_hasAskedForNotificationAccess) {
+        _hasAskedForNotificationAccess = true;
+        await _showNotificationAccessDialog();
+      }
+      return;
+    }
+
+    _googlePaySubscription ??= service.events.listen(_onGooglePayNotification);
+    await _consumePendingEvents();
+  }
+
+  Future<void> _consumePendingEvents() async {
+    if (_isConsumingPendingEvents) return;
+    _isConsumingPendingEvents = true;
+
+    try {
+      final pending = await GooglePayNotificationService.instance
+          .fetchAndClearPendingEvents();
+      if (!mounted || pending.isEmpty) return;
+
+      for (final event in pending) {
+        if (!mounted) break;
+        await _onGooglePayNotification(event);
+      }
+    } finally {
+      _isConsumingPendingEvents = false;
+    }
+  }
+
+  Future<void> _showNotificationAccessDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Google Pay Erkennung aktivieren'),
+        content: const Text(
+          'Damit Zahlungen automatisch vorgeschlagen werden, braucht Budgator Zugriff auf Benachrichtigungen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Spater'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await GooglePayNotificationService.instance
+                  .openNotificationAccessSettings();
+            },
+            child: const Text('Einstellungen offnen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onGooglePayNotification(
+    GooglePayNotificationEvent event,
+  ) async {
+    final key =
+        '${event.packageName}:${event.timestamp.millisecondsSinceEpoch}:${event.message}';
+    if (_handledNotificationKeys.contains(key)) return;
+    _handledNotificationKeys.add(key);
+    if (!mounted) return;
+
+    final draft = await _showPaymentOverlay(event);
+    if (!mounted || draft == null) return;
+
+    ref
+        .read(transactionsProvider.notifier)
+        .add(
+          TransactionModel(
+            title: draft.title,
+            amount: draft.amount,
+            date: draft.date,
+            category: draft.category,
+            type: TransactionType.expense,
+          ),
+        );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Zahlung als Transaktion gespeichert.')),
+    );
+  }
+
+  Future<_PaymentOverlayDraft?> _showPaymentOverlay(
+    GooglePayNotificationEvent event,
+  ) {
+    final categories = ref.read(knownCategoriesProvider);
+    final initialCategory = categories.contains('General')
+        ? 'General'
+        : (categories.isNotEmpty ? categories.first : 'General');
+    final amountController = TextEditingController(
+      text: (event.amount ?? 0).toStringAsFixed(2),
+    );
+    final titleController = TextEditingController(
+      text: event.title.isNotEmpty ? event.title : 'Google Pay Zahlung',
+    );
+    var selectedCategory = initialCategory;
+
+    return showModalBottomSheet<_PaymentOverlayDraft>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Google Pay Zahlung erkannt',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                event.message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Bezahlter Betrag',
+                  hintText: 'z. B. 7,50',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Titel'),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: selectedCategory,
+                items: (categories.isNotEmpty ? categories : ['General'])
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setModalState(() => selectedCategory = value);
+                },
+                decoration: const InputDecoration(labelText: 'Kategorie'),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Ignorieren'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final amount = double.tryParse(
+                          amountController.text.replaceAll(',', '.').trim(),
+                        );
+                        if (amount == null || amount <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Bitte gultigen Betrag eingeben.'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.of(context).pop(
+                          _PaymentOverlayDraft(
+                            amount: amount,
+                            title: titleController.text.trim().isEmpty
+                                ? 'Google Pay Zahlung'
+                                : titleController.text.trim(),
+                            category: selectedCategory,
+                            date: event.timestamp,
+                          ),
+                        );
+                      },
+                      child: const Text('Speichern'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -223,6 +465,20 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PaymentOverlayDraft {
+  final double amount;
+  final String title;
+  final String category;
+  final DateTime date;
+
+  const _PaymentOverlayDraft({
+    required this.amount,
+    required this.title,
+    required this.category,
+    required this.date,
+  });
 }
 
 class _HomeScreenContent extends StatelessWidget {

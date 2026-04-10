@@ -139,7 +139,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     if (summary.hasTotalBudget) {
       final projectedTotalSpent = summary.totalSpent + amount;
       if (projectedTotalSpent > summary.totalBudget) {
-        if (!context.mounted) return false;
+        if (!mounted) return false;
 
         final proceed = await showDialog<bool>(
           context: context,

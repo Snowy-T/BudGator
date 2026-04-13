@@ -281,6 +281,11 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       isActive: first.isActive,
     );
   }
+
+  void clearAll() {
+    state = const [];
+    unawaited(_save());
+  }
 }
 
 final savingsGoalProvider =

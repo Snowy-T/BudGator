@@ -4,6 +4,7 @@ import 'package:budgator/presentation/pages/transactions_page.dart';
 import 'package:budgator/presentation/pages/budget_page.dart';
 import 'package:budgator/presentation/pages/stats_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/services/google_pay_notification_service.dart';
@@ -176,6 +177,263 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
+  String _escapeCsvCell(String value) {
+    final escaped = value.replaceAll('"', '""');
+    final needsQuotes =
+        escaped.contains(',') ||
+        escaped.contains('"') ||
+        escaped.contains('\n');
+    if (!needsQuotes) return escaped;
+    return '"$escaped"';
+  }
+
+  String _buildTransactionsCsv(List<TransactionModel> transactions) {
+    final buffer = StringBuffer('id,title,amount,date,category,type\n');
+    for (final tx in transactions) {
+      final id = tx.id?.toString() ?? '';
+      buffer.writeln(
+        [
+          id,
+          _escapeCsvCell(tx.title),
+          tx.amount.toStringAsFixed(2),
+          tx.date.toIso8601String(),
+          _escapeCsvCell(tx.category),
+          tx.type.name,
+        ].join(','),
+      );
+    }
+    return buffer.toString();
+  }
+
+  List<List<String>> _parseCsvRows(String raw) {
+    final rows = <List<String>>[];
+    final row = <String>[];
+    final cell = StringBuffer();
+    var inQuotes = false;
+
+    for (var i = 0; i < raw.length; i++) {
+      final ch = raw[i];
+
+      if (inQuotes) {
+        if (ch == '"') {
+          final hasNextQuote = i + 1 < raw.length && raw[i + 1] == '"';
+          if (hasNextQuote) {
+            cell.write('"');
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          cell.write(ch);
+        }
+        continue;
+      }
+
+      if (ch == '"') {
+        inQuotes = true;
+      } else if (ch == ',') {
+        row.add(cell.toString());
+        cell.clear();
+      } else if (ch == '\n') {
+        row.add(cell.toString());
+        cell.clear();
+        rows.add(List<String>.from(row));
+        row.clear();
+      } else if (ch != '\r') {
+        cell.write(ch);
+      }
+    }
+
+    if (cell.isNotEmpty || row.isNotEmpty) {
+      row.add(cell.toString());
+      rows.add(List<String>.from(row));
+    }
+
+    return rows;
+  }
+
+  List<TransactionModel> _parseTransactionsCsv(String raw) {
+    final rows = _parseCsvRows(raw.trim());
+    if (rows.isEmpty) {
+      throw const FormatException('Leere CSV-Datei.');
+    }
+
+    final header = rows.first
+        .map((value) => value.trim().toLowerCase())
+        .toList();
+    int requireColumn(String name) {
+      final idx = header.indexOf(name);
+      if (idx < 0) throw FormatException('Spalte "$name" fehlt.');
+      return idx;
+    }
+
+    final titleIdx = requireColumn('title');
+    final amountIdx = requireColumn('amount');
+    final dateIdx = requireColumn('date');
+    final categoryIdx = requireColumn('category');
+    final typeIdx = requireColumn('type');
+
+    final imported = <TransactionModel>[];
+    for (final row in rows.skip(1)) {
+      if (row.every((cell) => cell.trim().isEmpty)) continue;
+
+      String valueAt(int index) => index < row.length ? row[index].trim() : '';
+
+      final title = valueAt(titleIdx);
+      final amountRaw = valueAt(amountIdx).replaceAll(',', '.');
+      final dateRaw = valueAt(dateIdx);
+      final category = valueAt(categoryIdx);
+      final typeRaw = valueAt(typeIdx).toLowerCase();
+
+      final amount = double.tryParse(amountRaw);
+      final date = DateTime.tryParse(dateRaw);
+
+      if (title.isEmpty ||
+          category.isEmpty ||
+          amount == null ||
+          amount <= 0 ||
+          date == null) {
+        continue;
+      }
+
+      final type = switch (typeRaw) {
+        'income' || 'einnahme' || 'einnahmen' || '+' => TransactionType.income,
+        _ => TransactionType.expense,
+      };
+
+      imported.add(
+        TransactionModel(
+          title: title,
+          amount: amount,
+          date: date,
+          category: category,
+          type: type,
+        ),
+      );
+    }
+
+    return imported;
+  }
+
+  Future<void> _showCsvExportDialog() async {
+    final csv = _buildTransactionsCsv(ref.read(transactionsProvider));
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('CSV Export'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(child: SelectableText(csv)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Schließen'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: csv));
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('CSV in die Zwischenablage kopiert.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.copy_rounded),
+            label: const Text('Kopieren'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCsvImportDialog() async {
+    final controller = TextEditingController();
+    final shouldImport = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('CSV Import'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: controller,
+            minLines: 10,
+            maxLines: 16,
+            decoration: const InputDecoration(
+              hintText:
+                  'CSV hier einfügen (inkl. Header: id,title,amount,date,category,type)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Importieren'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldImport != true || !mounted) return;
+
+    try {
+      final imported = _parseTransactionsCsv(controller.text);
+      ref.read(transactionsProvider.notifier).replaceAll(imported);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${imported.length} Transaktionen importiert.')),
+      );
+    } on FormatException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Import fehlgeschlagen: ${error.message}')),
+      );
+    }
+  }
+
+  Future<void> _resetAppData() async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('App-Daten zurücksetzen'),
+        content: const Text(
+          'Alle Transaktionen, Budgets und Sparziele werden auf 0 zurückgesetzt. Der Darkmode bleibt unverändert.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Zurücksetzen'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldReset != true || !mounted) return;
+
+    ref.read(transactionsProvider.notifier).clearAll();
+    ref.read(savingsGoalProvider.notifier).clearAll();
+    ref.read(categoryBudgetProvider.notifier).resetAllData();
+    ref.read(monthlyTotalBudgetProvider.notifier).resetAllData();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('App-Daten wurden zurückgesetzt.')),
+    );
+  }
+
   Future<void> _openSettingsSheet() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -219,16 +477,40 @@ class _HomePageState extends ConsumerState<HomePage>
                   const SizedBox(height: 4),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.refresh_rounded),
-                    title: const Text('Darkmode zurücksetzen'),
-                    subtitle: const Text('Zurück zum Systemmodus'),
+                    leading: const Icon(Icons.download_rounded),
+                    title: const Text('CSV Export'),
+                    subtitle: const Text('Transaktionen als CSV kopieren'),
                     onTap: () async {
-                      await ref
-                          .read(themeModeProvider.notifier)
-                          .resetThemeMode();
                       if (context.mounted) {
                         Navigator.of(context).pop();
                       }
+                      await _showCsvExportDialog();
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.upload_file_rounded),
+                    title: const Text('CSV Import'),
+                    subtitle: const Text('Transaktionen aus CSV importieren'),
+                    onTap: () async {
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                      await _showCsvImportDialog();
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.restart_alt_rounded),
+                    title: const Text('App-Daten zurücksetzen'),
+                    subtitle: const Text(
+                      'Setzt Budgets, Ziele und Transaktionen auf 0',
+                    ),
+                    onTap: () async {
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                      await _resetAppData();
                     },
                   ),
                 ],
@@ -312,7 +594,9 @@ class _HomePageState extends ConsumerState<HomePage>
                 event.message,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[700]),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -437,9 +721,9 @@ class _HomePageState extends ConsumerState<HomePage>
         onPressed: () {
           context.push('/addTransaction');
         },
-        backgroundColor: Colors.green,
+        backgroundColor: colorScheme.primary,
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
+        child: Icon(Icons.add, color: colorScheme.onPrimary, size: 32),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: SafeArea(
@@ -513,6 +797,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isActive = currentIndex == index;
     return InkWell(
       onTap: () => onTap(index),
@@ -522,7 +807,13 @@ class _NavItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? Colors.green : Colors.grey, size: 20),
+            Icon(
+              icon,
+              color: isActive
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
             const SizedBox(height: 2),
             FittedBox(
               fit: BoxFit.scaleDown,
@@ -533,7 +824,9 @@ class _NavItem extends StatelessWidget {
                 softWrap: false,
                 style: TextStyle(
                   fontSize: 9,
-                  color: isActive ? Colors.green : Colors.grey,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),

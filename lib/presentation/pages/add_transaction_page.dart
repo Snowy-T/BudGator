@@ -310,25 +310,21 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF098825)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: colorScheme.primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.add_circle_outline, color: Colors.white),
+                  Icon(Icons.add_circle_outline, color: colorScheme.onPrimary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Neue Transaktion',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -336,7 +332,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         Text(
                           'Erfasse Einnahmen oder Ausgaben',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: colorScheme.onPrimary.withValues(alpha: 0.9),
                             fontSize: 12,
                           ),
                         ),
@@ -361,15 +357,49 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   children: [
                     TextFormField(
                       controller: _titleController,
-                      decoration: _fieldDecoration('Titel'),
+                      decoration: InputDecoration(
+                        labelText: 'Titel',
+                        prefixIcon: Icon(Icons.title_rounded, color: colorScheme.primary),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                      ),
                       validator: (value) =>
                           value!.isEmpty ? 'Titel eingeben' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
-                      decoration: _fieldDecoration('Betrag'),
                       keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Betrag',
+                        prefixIcon: Icon(Icons.euro_rounded, color: colorScheme.primary),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                      ),
                       validator: (value) =>
                           value!.isEmpty ? 'Betrag eingeben' : null,
                     ),
@@ -391,7 +421,24 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       onChanged: (val) {
                         if (val != null) setState(() => _type = val);
                       },
-                      decoration: _fieldDecoration('Typ'),
+                      decoration: InputDecoration(
+                        labelText: 'Typ',
+                        prefixIcon: Icon(Icons.swap_vert_rounded, color: colorScheme.primary),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
@@ -404,52 +451,74 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       onChanged: (val) {
                         if (val != null) setState(() => _category = val);
                       },
-                      decoration: _fieldDecoration('Kategorie'),
+                      decoration: InputDecoration(
+                        labelText: 'Kategorie',
+                        prefixIcon: Icon(Icons.category_rounded, color: colorScheme.primary),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Datum: ${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 12,
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Datum',
+                        prefixIcon: Icon(Icons.calendar_today_rounded, color: colorScheme.primary),
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
+                              style: TextStyle(color: colorScheme.onSurfaceVariant),
                             ),
                           ),
-                        ),
-                        OutlinedButton(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _selectedDate,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime.now(),
-                            );
-                            if (picked != null) {
-                              setState(() => _selectedDate = picked);
-                            }
-                          },
-                          child: const Text('Datum wählen'),
-                        ),
-                      ],
+                          TextButton(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _selectedDate,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime.now(),
+                              );
+                              if (picked != null) {
+                                setState(() => _selectedDate = picked);
+                              }
+                            },
+                            child: const Text('Wählen'),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: FilledButton.icon(
                         onPressed: () => _submitTransaction(selectedCategory),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF098825),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Transaktion hinzufügen',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Transaktion hinzufügen'),
                       ),
                     ),
                   ],
@@ -462,26 +531,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     );
   }
 
-  InputDecoration _fieldDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.green),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    );
-  }
 }
 
 class _OverspendDecision {

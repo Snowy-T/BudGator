@@ -273,6 +273,7 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final transactions = ref.watch(transactionsProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
     final now = DateTime.now();
@@ -285,14 +286,14 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: Text(
             'Keine Ausgaben in den letzten 30 Tagen',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -324,9 +325,9 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
               children: [
@@ -339,7 +340,7 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Divider(color: Colors.grey[300]),
+                Divider(color: colorScheme.outlineVariant),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -452,9 +453,10 @@ class _RangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.all(2),
@@ -494,13 +496,14 @@ class _RangeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.transparent,
+          color: isActive ? colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
@@ -508,7 +511,9 @@ class _RangeChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: isActive ? Colors.black87 : Colors.grey[700],
+            color: isActive
+                ? colorScheme.onSurface
+                : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -544,6 +549,8 @@ class _LineChart extends StatelessWidget {
             painter: _LineChartPainter(
               values: values,
               showDots: values.length <= 14,
+              gridColor: Theme.of(context).colorScheme.outlineVariant,
+              dotInnerColor: Theme.of(context).colorScheme.surface,
             ),
             child: Column(
               children: [
@@ -555,9 +562,11 @@ class _LineChart extends StatelessWidget {
                       .map(
                         (label) => Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       )
@@ -584,8 +593,15 @@ class _LineChart extends StatelessWidget {
 class _LineChartPainter extends CustomPainter {
   final List<double> values;
   final bool showDots;
+  final Color gridColor;
+  final Color dotInnerColor;
 
-  _LineChartPainter({required this.values, required this.showDots});
+  _LineChartPainter({
+    required this.values,
+    required this.showDots,
+    required this.gridColor,
+    required this.dotInnerColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -602,7 +618,7 @@ class _LineChartPainter extends CustomPainter {
       ..color = Colors.green[700]!
       ..style = PaintingStyle.fill;
     final paintGrid = Paint()
-      ..color = Colors.grey[200]!
+      ..color = gridColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -642,7 +658,7 @@ class _LineChartPainter extends CustomPainter {
           point,
           5,
           Paint()
-            ..color = Colors.white
+            ..color = dotInnerColor
             ..style = PaintingStyle.fill,
         );
         canvas.drawCircle(point, 3.5, paintDot);
@@ -652,7 +668,10 @@ class _LineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
-    return oldDelegate.values != values || oldDelegate.showDots != showDots;
+    return oldDelegate.values != values ||
+        oldDelegate.showDots != showDots ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.dotInnerColor != dotInnerColor;
   }
 }
 
@@ -682,7 +701,13 @@ class _StatBox extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -763,7 +788,9 @@ class TopCategoriesWidget extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey[700],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -814,7 +841,10 @@ class RecentTransactionsWidget extends ConsumerWidget {
                   onTap: onShowAll,
                   child: Text(
                     'Alle',
-                    style: TextStyle(fontSize: 12, color: Colors.blue[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
             ],
@@ -857,7 +887,9 @@ class RecentTransactionsWidget extends ConsumerWidget {
                               isVisible: isVisible,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey[600],
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -894,13 +926,14 @@ class SavingsGoalWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final savingsGoal = ref.watch(firstSavingsGoalProvider);
     if (savingsGoal == null) {
+      final colorScheme = Theme.of(context).colorScheme;
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Row(
           children: [

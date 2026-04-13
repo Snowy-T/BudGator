@@ -97,6 +97,20 @@ String _monthKey(DateTime date) {
   return '${date.year}-$month';
 }
 
+const List<CategoryBudget> _defaultCategoryBudgets = [
+  CategoryBudget(id: 'cat-wohnen', name: 'Wohnen', monthlyLimit: 0),
+  CategoryBudget(id: 'cat-food', name: 'Lebensmittel', monthlyLimit: 0),
+  CategoryBudget(id: 'cat-transport', name: 'Transport', monthlyLimit: 0),
+  CategoryBudget(
+    id: 'cat-entertainment',
+    name: 'Unterhaltung',
+    monthlyLimit: 0,
+  ),
+  CategoryBudget(id: 'cat-shopping', name: 'Shopping', monthlyLimit: 0),
+  CategoryBudget(id: 'cat-cafe', name: 'Cafe', monthlyLimit: 0),
+  CategoryBudget(id: 'cat-general', name: 'General', monthlyLimit: 0),
+];
+
 class MonthlyTotalBudgetNotifier extends StateNotifier<double> {
   MonthlyTotalBudgetNotifier(this._storage) : super(0) {
     _load();
@@ -122,6 +136,12 @@ class MonthlyTotalBudgetNotifier extends StateNotifier<double> {
     state = amount;
     unawaited(_save());
   }
+
+  void resetAllData() {
+    _allValues = {};
+    state = 0;
+    unawaited(_save());
+  }
 }
 
 class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
@@ -139,19 +159,7 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
     }
 
     // Seed from common categories so user can directly set limits.
-    state = const [
-      CategoryBudget(id: 'cat-wohnen', name: 'Wohnen', monthlyLimit: 0),
-      CategoryBudget(id: 'cat-food', name: 'Lebensmittel', monthlyLimit: 0),
-      CategoryBudget(id: 'cat-transport', name: 'Transport', monthlyLimit: 0),
-      CategoryBudget(
-        id: 'cat-entertainment',
-        name: 'Unterhaltung',
-        monthlyLimit: 0,
-      ),
-      CategoryBudget(id: 'cat-shopping', name: 'Shopping', monthlyLimit: 0),
-      CategoryBudget(id: 'cat-cafe', name: 'Cafe', monthlyLimit: 0),
-      CategoryBudget(id: 'cat-general', name: 'General', monthlyLimit: 0),
-    ];
+    state = _defaultCategoryBudgets;
     unawaited(_save());
   }
 
@@ -283,6 +291,11 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
 
   void deleteCategory(String id) {
     state = state.where((budget) => budget.id != id).toList();
+    unawaited(_save());
+  }
+
+  void resetAllData() {
+    state = _defaultCategoryBudgets;
     unawaited(_save());
   }
 }

@@ -7,6 +7,7 @@ class SummaryBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final balance = ref.watch(balanceProvider);
     final income = ref.watch(totalIncomeProvider);
     final expenses = ref.watch(totalExpensesProvider);
@@ -19,7 +20,7 @@ class SummaryBar extends ConsumerWidget {
             child: _SummaryBox(
               label: 'Einnahmen',
               amount: income,
-              color: Colors.green,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(width: 8),
@@ -27,7 +28,7 @@ class SummaryBar extends ConsumerWidget {
             child: _SummaryBox(
               label: 'Ausgaben',
               amount: expenses,
-              color: Colors.red,
+              color: colorScheme.error,
             ),
           ),
           const SizedBox(width: 8),
@@ -35,7 +36,7 @@ class SummaryBar extends ConsumerWidget {
             child: _SummaryBox(
               label: 'Saldo',
               amount: balance,
-              color: balance >= 0 ? Colors.green : Colors.red,
+              color: balance >= 0 ? colorScheme.primary : colorScheme.error,
             ),
           ),
         ],
@@ -57,16 +58,21 @@ class _SummaryBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFD3D3D3),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(color: Colors.black, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Text(
             '€${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',

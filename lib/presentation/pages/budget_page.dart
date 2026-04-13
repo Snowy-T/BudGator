@@ -194,18 +194,23 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 ),
                 const SizedBox(height: 12),
                 if (categories.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: const Text(
-                      'Keine Kategorien mit Budget vorhanden',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final colorScheme = Theme.of(context).colorScheme;
+                      return Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant),
+                        ),
+                        child: Text(
+                          'Keine Kategorien mit Budget vorhanden',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                      );
+                    },
                   )
                 else
                   ListView.separated(
@@ -273,12 +278,20 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Monatliches Gesamtbudget ändern'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Gesamtbudget',
-            hintText: 'z.B. 1800',
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Gesamtbudget',
+              hintText: 'z.B. 1800',
+              prefixIcon: const Icon(Icons.wallet_rounded),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+            ),
           ),
         ),
         actions: [
@@ -580,13 +593,18 @@ class _SetupBudgetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wallet_rounded, size: 80, color: Colors.grey[400]),
+            Icon(
+              Icons.wallet_rounded,
+              size: 80,
+              color: colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 24),
             const Text(
               'Budget einrichten',
@@ -597,7 +615,7 @@ class _SetupBudgetScreen extends ConsumerWidget {
             Text(
               'Um Ausgaben zu verwalten, richten Sie zunächst ein monatliches Gesamtbudget ein. Sie können dann Kategorien erstellen und den Betrag zwischen ihnen verteilen.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
@@ -674,6 +692,8 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = totalAllocated > 0
         ? (totalSpent / totalAllocated).clamp(0.0, 1.0)
         : 0.0;
@@ -685,14 +705,25 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isOverBudget
-              ? [const Color(0xFFFFECEC), const Color(0xFFFFF8F2)]
-              : [const Color(0xFFE9FDF5), const Color(0xFFF4FFF9)],
+              ? (isDark
+                    ? [const Color(0xFF5F1F1A), const Color(0xFF7F2725)]
+                    : [const Color(0xFFFFECEC), const Color(0xFFFFF8F2)])
+              : (isDark
+                    ? [const Color(0xFF064E3B), const Color(0xFF0D5E45)]
+                    : [const Color(0xFFE9FDF5), const Color(0xFFF4FFF9)]),
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOverBudget ? Colors.red.shade200 : Colors.green.shade200,
+          color: isOverBudget
+              ? (isDark
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.38)
+                    : Colors.red.shade200)
+              : (isDark
+                    ? const Color(0xFF10B981).withValues(alpha: 0.38)
+                    : Colors.green.shade200),
+          width: 1.5,
         ),
       ),
       child: Column(
@@ -747,7 +778,7 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 8,
               value: progress,
-              backgroundColor: Colors.grey[300],
+              backgroundColor: colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(color.shade400),
             ),
           ),
@@ -792,6 +823,7 @@ class _CategoryAllocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final progress = allocated > 0 ? (spent / allocated).clamp(0.0, 1.0) : 0.0;
     final remaining = allocated - spent;
 
@@ -800,10 +832,10 @@ class _CategoryAllocationCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isOver ? Colors.red.shade200 : Colors.grey[300]!,
+            color: isOver ? Colors.red.shade200 : colorScheme.outlineVariant,
           ),
         ),
         child: Column(
@@ -824,7 +856,7 @@ class _CategoryAllocationCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isOver ? Colors.red : Colors.grey,
+                    color: isOver ? Colors.red : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -835,7 +867,7 @@ class _CategoryAllocationCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 minHeight: 6,
                 value: progress,
-                backgroundColor: Colors.grey[300],
+                backgroundColor: colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation(
                   isOver ? Colors.red.shade500 : Colors.orange.shade400,
                 ),

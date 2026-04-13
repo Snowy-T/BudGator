@@ -60,9 +60,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                   controller: _tabController,
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
-                  indicator: _BrowserTabIndicator(color: Colors.white),
-                  labelColor: Colors.black87,
-                  unselectedLabelColor: Colors.grey[700],
+                  indicator: _BrowserTabIndicator(color: colorScheme.surface),
+                  labelColor: colorScheme.onSurface,
+                  unselectedLabelColor: colorScheme.onSurfaceVariant,
                   labelStyle: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -154,6 +154,7 @@ class _TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (transactions.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
@@ -166,10 +167,10 @@ class _TransactionList extends StatelessWidget {
               color: Theme.of(context).colorScheme.outlineVariant,
             ),
           ),
-          child: const Text(
+          child: Text(
             'Keine Transaktionen',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -213,23 +214,24 @@ class _TransactionGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             date,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -247,6 +249,7 @@ class _TransactionTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isIncome = transaction.type == TransactionType.income;
     final color = isIncome ? Colors.green : Colors.red;
     final icon = isIncome
@@ -281,7 +284,10 @@ class _TransactionTile extends ConsumerWidget {
                 ),
                 Text(
                   '${transaction.category} - $time',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -362,80 +368,120 @@ class _TransactionTile extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
           title: const Text('Transaktion bearbeiten'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Titel'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(labelText: 'Betrag'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: categoryController,
-                  decoration: const InputDecoration(labelText: 'Kategorie'),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<TransactionType>(
-                  initialValue: selectedType,
-                  items: const [
-                    DropdownMenuItem(
-                      value: TransactionType.income,
-                      child: Text('Einnahme'),
-                    ),
-                    DropdownMenuItem(
-                      value: TransactionType.expense,
-                      child: Text('Ausgabe'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setModalState(() {
-                      selectedType = value;
-                    });
-                  },
-                  decoration: const InputDecoration(labelText: 'Typ'),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Datum: ${selectedDate.day}.${selectedDate.month}.${selectedDate.year}',
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Titel',
+                      prefixIcon: const Icon(Icons.title_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      filled: true,
                     ),
-                    TextButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked == null) return;
-                        setModalState(() {
-                          selectedDate = DateTime(
-                            picked.year,
-                            picked.month,
-                            picked.day,
-                            selectedDate.hour,
-                            selectedDate.minute,
-                          );
-                        });
-                      },
-                      child: const Text('Wahlen'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                  ],
-                ),
-              ],
+                    decoration: InputDecoration(
+                      labelText: 'Betrag',
+                      prefixIcon: const Icon(Icons.euro_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: categoryController,
+                    decoration: InputDecoration(
+                      labelText: 'Kategorie',
+                      prefixIcon: const Icon(Icons.category_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<TransactionType>(
+                    initialValue: selectedType,
+                    items: const [
+                      DropdownMenuItem(
+                        value: TransactionType.income,
+                        child: Text('Einnahme'),
+                      ),
+                      DropdownMenuItem(
+                        value: TransactionType.expense,
+                        child: Text('Ausgabe'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setModalState(() {
+                        selectedType = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Typ',
+                      prefixIcon: const Icon(Icons.swap_vert_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Datum',
+                      prefixIcon: const Icon(Icons.calendar_today_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text('${selectedDate.day}.${selectedDate.month}.${selectedDate.year}'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked == null) return;
+                            setModalState(() {
+                              selectedDate = DateTime(
+                                picked.year,
+                                picked.month,
+                                picked.day,
+                                selectedDate.hour,
+                                selectedDate.minute,
+                              );
+                            });
+                          },
+                          child: const Text('Wählen'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [

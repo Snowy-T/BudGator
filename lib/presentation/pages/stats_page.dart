@@ -36,6 +36,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final transactions = ref.watch(transactionsProvider);
     final filtered = _applyRangeFilter(transactions, _selectedRange);
     final stats = _buildStats(filtered);
@@ -61,7 +62,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                   const SizedBox(height: 4),
                   Text(
                     '${stats.transactionCount} Buchungen im Zeitraum',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Wrap(
@@ -122,6 +126,8 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPositive = stats.netFlow >= 0;
     final accent = isPositive
         ? const Color(0xFF0E9F6E)
@@ -134,10 +140,20 @@ class _InsightCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           colors: isPositive
-              ? [const Color(0xFFDCFCE7), const Color(0xFFBBF7D0)]
-              : [const Color(0xFFFEE2E2), const Color(0xFFFECACA)],
+              ? (isDark
+                    ? [const Color(0xFF064E3B), const Color(0xFF0D9488)]
+                    : [const Color(0xFFDCFCE7), const Color(0xFFBBF7D0)])
+              : (isDark
+                    ? [const Color(0xFF5F1F1A), const Color(0xFF7F1D1B)]
+                    : [const Color(0xFFFEE2E2), const Color(0xFFFECACA)]),
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: isPositive
+              ? const Color(0xFF10B981).withValues(alpha: isDark ? 0.42 : 0.24)
+              : const Color(0xFFEF4444).withValues(alpha: isDark ? 0.42 : 0.24),
+          width: 1.5,
         ),
       ),
       child: Column(
@@ -167,7 +183,7 @@ class _InsightCard extends StatelessWidget {
             'Netto in ${selectedRange.label} (Einnahmen - Ausgaben)',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.grey.shade700),
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -276,7 +292,7 @@ class _WeeklyTrendCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Column(
         children: [
           SizedBox(
@@ -315,7 +331,9 @@ class _WeeklyTrendCard extends StatelessWidget {
                                         maxLines: 1,
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: Colors.grey.shade600,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ),
@@ -386,7 +404,10 @@ class _WeeklyTrendCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Woechentliche Ausgaben in Balkenform, damit Trends schnell sichtbar sind.',
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -407,7 +428,7 @@ class _CategoryBreakdownCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Column(
         children: [
           for (final entry in stats.categoryExpenses.entries)
@@ -459,7 +480,7 @@ class _WeekdayPatternCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Column(
         children: [
           for (final weekday in [
@@ -547,7 +568,7 @@ class _BarRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -559,7 +580,9 @@ class _BarRow extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: clampedPercent / 100,
                   minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
@@ -602,7 +625,7 @@ class _StatTile extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 126),
       padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,7 +640,7 @@ class _StatTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -638,7 +661,10 @@ class _StatTile extends StatelessWidget {
               subtitle!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],
@@ -657,8 +683,11 @@ class _SimpleInfoCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
-      child: Text(text, style: TextStyle(color: Colors.grey.shade700)),
+      decoration: _cardDecoration(context),
+      child: Text(
+        text,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }
@@ -692,7 +721,7 @@ class _EmptyStatsState extends StatelessWidget {
               Icon(
                 Icons.insert_chart_outlined_rounded,
                 size: 64,
-                color: Colors.grey.shade500,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 14),
               const Text(
@@ -704,7 +733,9 @@ class _EmptyStatsState extends StatelessWidget {
               Text(
                 'Sobald du Transaktionen hinzufuegst, siehst du hier Trends, Kategorien und Sparquote.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade700),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -714,14 +745,15 @@ class _EmptyStatsState extends StatelessWidget {
   }
 }
 
-BoxDecoration _cardDecoration() {
+BoxDecoration _cardDecoration(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
   return BoxDecoration(
-    color: Colors.white,
+    color: colorScheme.surface,
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xFFE2E8F0)),
+    border: Border.all(color: colorScheme.outlineVariant),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withValues(alpha: 0.03),
+        color: colorScheme.shadow.withValues(alpha: 0.12),
         blurRadius: 10,
         offset: const Offset(0, 5),
       ),

@@ -53,6 +53,33 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
     unawaited(_storage.saveTransactions(state));
   }
 
+  void replaceAll(List<TransactionModel> transactions) {
+    final normalized = [...transactions]
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    var nextId = 1;
+    final rebuilt = normalized
+        .map(
+          (tx) => TransactionModel(
+            id: nextId++,
+            title: tx.title,
+            amount: tx.amount,
+            date: tx.date,
+            category: tx.category,
+            type: tx.type,
+          ),
+        )
+        .toList();
+
+    state = rebuilt;
+    _nextId = nextId;
+    unawaited(_storage.saveTransactions(state));
+  }
+
+  void clearAll() {
+    replaceAll(const []);
+  }
+
   void renameCategory(String oldName, String newName) {
     final oldNormalized = oldName.trim().toLowerCase();
     final replacement = newName.trim();

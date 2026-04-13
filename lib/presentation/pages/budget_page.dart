@@ -368,28 +368,43 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Neue Kategorie'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Kategoriename',
-                hintText: 'z.B. Lebensmittel',
-              ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Kategoriename',
+                    hintText: 'z.B. Lebensmittel',
+                    prefixIcon: const Icon(Icons.category_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: allocController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Budget-Zuweisung',
+                    hintText: 'z.B. 300',
+                    prefixIcon: const Icon(Icons.euro_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: allocController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Budget-Zuweisung',
-                hintText: 'z.B. 300',
-              ),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -471,17 +486,27 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${category.name} bearbeiten'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Budget-Zuweisung',
+                  prefixIcon: const Icon(Icons.euro_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                ),
               ),
-              decoration: const InputDecoration(labelText: 'Budget-Zuweisung'),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -490,7 +515,10 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop('delete'),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Löschen'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop('save'),

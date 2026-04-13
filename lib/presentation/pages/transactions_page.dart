@@ -449,12 +449,17 @@ class _TransactionTile extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text('${selectedDate.day}.${selectedDate.month}.${selectedDate.year}'),
+                          child: Text(
+                            '${selectedDate.day}.${selectedDate.month}.${selectedDate.year}',
+                          ),
                         ),
                         TextButton(
                           onPressed: () async {

@@ -359,7 +359,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       controller: _titleController,
                       decoration: InputDecoration(
                         labelText: 'Titel',
-                        prefixIcon: Icon(Icons.title_rounded, color: colorScheme.primary),
+                        prefixIcon: Icon(
+                          Icons.title_rounded,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
@@ -368,11 +371,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                       validator: (value) =>
@@ -384,7 +392,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Betrag',
-                        prefixIcon: Icon(Icons.euro_rounded, color: colorScheme.primary),
+                        prefixIcon: Icon(
+                          Icons.euro_rounded,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
@@ -393,11 +404,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                       validator: (value) =>
@@ -423,7 +439,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       },
                       decoration: InputDecoration(
                         labelText: 'Typ',
-                        prefixIcon: Icon(Icons.swap_vert_rounded, color: colorScheme.primary),
+                        prefixIcon: Icon(
+                          Icons.swap_vert_rounded,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
@@ -432,11 +451,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -453,7 +477,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       },
                       decoration: InputDecoration(
                         labelText: 'Kategorie',
-                        prefixIcon: Icon(Icons.category_rounded, color: colorScheme.primary),
+                        prefixIcon: Icon(
+                          Icons.category_rounded,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
@@ -462,11 +489,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -474,25 +506,37 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     InputDecorator(
                       decoration: InputDecoration(
                         labelText: 'Datum',
-                        prefixIcon: Icon(Icons.calendar_today_rounded, color: colorScheme.primary),
+                        prefixIcon: Icon(
+                          Icons.calendar_today_rounded,
+                          color: colorScheme.primary,
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                          borderSide: BorderSide(
+                            color: colorScheme.outlineVariant,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
-                              style: TextStyle(color: colorScheme.onSurfaceVariant),
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           TextButton(
@@ -530,7 +574,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       ),
     );
   }
-
 }
 
 class _OverspendDecision {

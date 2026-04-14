@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/money_formatter.dart';
 import '../../data/models/transaction_model.dart';
 import '../controllers/transaction_provider.dart';
 import '../theme/category_colors.dart';
@@ -282,19 +283,52 @@ class _WeeklyTrendCard extends StatelessWidget {
       return const _SimpleInfoCard(text: 'Noch keine Ausgaben im Zeitraum.');
     }
 
-    final maxValue = stats.weeklyExpenses.values.fold<double>(
+    final values = stats.weeklyExpenses.values.toList();
+    final labels = stats.weeklyExpenses.keys.toList();
+    final maxValue = values.fold<double>(
       0,
       (max, value) => value > max ? value : max,
     );
+    final avgValue =
+        values.fold<double>(0, (sum, v) => sum + v) / values.length;
+    final trend = values.length < 2
+        ? 0.0
+        : values.last - values[values.length - 2];
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final chartHeight = (148 + ((textScale - 1) * 20).clamp(0.0, 20.0))
         .toDouble();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
       decoration: _cardDecoration(context),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(
+                label: 'Max',
+                value: _formatCompact(maxValue),
+                color: const Color(0xFF10B981),
+              ),
+              _MiniPill(
+                label: 'Ø Woche',
+                value: _formatCompact(avgValue),
+                color: const Color(0xFF0EA5E9),
+              ),
+              _MiniPill(
+                label: 'Trend',
+                value: '${trend >= 0 ? '+' : ''}${_formatCompact(trend)}',
+                color: trend <= 0
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             height: chartHeight,
             child: LayoutBuilder(
@@ -302,98 +336,117 @@ class _WeeklyTrendCard extends StatelessWidget {
                 final itemWidth = 64.0;
                 final chartWidth = math.max(
                   constraints.maxWidth,
-                  stats.weeklyExpenses.length * itemWidth,
+                  values.length * itemWidth,
                 );
 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
                     width: chartWidth,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Stack(
                       children: [
-                        for (final entry in stats.weeklyExpenses.entries)
-                          SizedBox(
-                            width: itemWidth,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  SizedBox(
-                                    height: 16,
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _formatCompact(entry.value),
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Expanded(
-                                    child: TweenAnimationBuilder<double>(
-                                      tween: Tween<double>(
-                                        begin: 0,
-                                        end: maxValue == 0
-                                            ? 0.03
-                                            : (entry.value / maxValue).clamp(
-                                                0.03,
-                                                1.0,
-                                              ),
-                                      ),
-                                      duration: const Duration(
-                                        milliseconds: 350,
-                                      ),
-                                      curve: Curves.easeOutCubic,
-                                      builder: (context, factor, child) {
-                                        return Align(
-                                          alignment: Alignment.bottomCenter,
-                                          child: FractionallySizedBox(
-                                            heightFactor: factor,
-                                            widthFactor: 1,
-                                            child: child,
-                                          ),
-                                        );
-                                      },
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF10B981),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  SizedBox(
-                                    height: 16,
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        entry.key,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        Positioned.fill(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: const [
+                              Divider(height: 1),
+                              Divider(height: 1),
+                              Divider(height: 1),
+                              Divider(height: 1),
+                            ],
                           ),
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: List<Widget>.generate(values.length, (i) {
+                            return SizedBox(
+                              width: itemWidth,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    SizedBox(
+                                      height: 16,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          _formatCompact(values[i]),
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Expanded(
+                                      child: TweenAnimationBuilder<double>(
+                                        tween: Tween<double>(
+                                          begin: 0,
+                                          end: maxValue == 0
+                                              ? 0.03
+                                              : (values[i] / maxValue).clamp(
+                                                  0.03,
+                                                  1.0,
+                                                ),
+                                        ),
+                                        duration: const Duration(
+                                          milliseconds: 350,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, factor, child) {
+                                          return Align(
+                                            alignment: Alignment.bottomCenter,
+                                            child: FractionallySizedBox(
+                                              heightFactor: factor,
+                                              widthFactor: 1,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF34D399),
+                                                Color(0xFF059669),
+                                              ],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                      height: 16,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          labels[i],
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
                       ],
                     ),
                   ),
@@ -403,11 +456,8 @@ class _WeeklyTrendCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Woechentliche Ausgaben in Balkenform, damit Trends schnell sichtbar sind.',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
-            ),
+            'Je Balken = eine Woche. So siehst du Ausreisser und Trendwechsel sofort.',
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
           ),
         ],
       ),
@@ -477,34 +527,149 @@ class _WeekdayPatternCard extends StatelessWidget {
       0,
       (max, value) => value > max ? value : max,
     );
+    final sorted = stats.weekdayExpenses.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final dayOrder = [
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+      DateTime.saturday,
+      DateTime.sunday,
+    ];
+    final rankByDay = <int, int>{};
+    for (var i = 0; i < sorted.length; i++) {
+      rankByDay[sorted[i].key] = i + 1;
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: _cardDecoration(context),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final weekday in [
-            DateTime.monday,
-            DateTime.tuesday,
-            DateTime.wednesday,
-            DateTime.thursday,
-            DateTime.friday,
-            DateTime.saturday,
-            DateTime.sunday,
-          ])
+          for (final day in dayOrder)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _BarRow(
-                label: _weekdayNames[weekday]!,
-                amount: stats.weekdayExpenses[weekday] ?? 0,
-                percent: maxValue == 0
-                    ? 0
-                    : ((stats.weekdayExpenses[weekday] ?? 0) / maxValue) * 100,
-                color: const Color(0xFF0EA5E9),
-                icon: Icons.calendar_today_rounded,
-                trailingAsRelative: true,
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _WeekdayRankRow(
+                label: _weekdayNames[day]!,
+                amount: stats.weekdayExpenses[day] ?? 0,
+                rank: rankByDay[day] ?? 7,
+                maxValue: maxValue,
               ),
             ),
+          Text(
+            'Rang 1 = hoechster Ausgabentag. Die Farbstaerke zeigt dir den Unterschied auf einen Blick.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekdayRankRow extends StatelessWidget {
+  final String label;
+  final double amount;
+  final int rank;
+  final double maxValue;
+
+  const _WeekdayRankRow({
+    required this.label,
+    required this.amount,
+    required this.rank,
+    required this.maxValue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final intensity = maxValue <= 0 ? 0.0 : (amount / maxValue).clamp(0.0, 1.0);
+    final heatColor = Color.lerp(
+      colorScheme.surfaceContainerHighest,
+      const Color(0xFF0EA5E9),
+      intensity,
+    )!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: heatColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$rank',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Text(
+            formatEuroSmart(amount),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniPill extends StatelessWidget {
+  const _MiniPill({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$label: $value',
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -518,7 +683,6 @@ class _BarRow extends StatelessWidget {
     required this.percent,
     required this.color,
     required this.icon,
-    this.trailingAsRelative = false,
   });
 
   final String label;
@@ -526,7 +690,6 @@ class _BarRow extends StatelessWidget {
   final double percent;
   final Color color;
   final IconData icon;
-  final bool trailingAsRelative;
 
   @override
   Widget build(BuildContext context) {
@@ -560,9 +723,7 @@ class _BarRow extends StatelessWidget {
                   ),
                   Flexible(
                     child: Text(
-                      trailingAsRelative
-                          ? '${clampedPercent.toStringAsFixed(0)}% vom Top-Tag'
-                          : '${clampedPercent.toStringAsFixed(1)}%',
+                      '${clampedPercent.toStringAsFixed(1)}%',
                       maxLines: 1,
                       textAlign: TextAlign.right,
                       overflow: TextOverflow.ellipsis,
@@ -840,11 +1001,11 @@ _StatsSnapshot _buildStats(List<TransactionModel> transactions) {
       : weeklyEntries;
 
   final weeklyLabelMap = <String, double>{};
+  var weekCounter = 1;
   for (final entry in trimmedWeeks) {
-    final start = entry.key;
-    final end = start.add(const Duration(days: 6));
-    final label = '${start.day}.${start.month}-${end.day}.${end.month}';
+    final label = 'Woche $weekCounter';
     weeklyLabelMap[label] = entry.value;
+    weekCounter++;
   }
 
   final maxExpense = expenses.isEmpty
@@ -887,25 +1048,14 @@ int _calcCurrentNoSpendStreak(Set<DateTime> expenseDays) {
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 String _formatAmount(double value) {
-  final formatted = value.toStringAsFixed(2);
-  final parts = formatted.split('.');
-  var intPart = parts[0];
-  final isNegative = intPart.startsWith('-');
-  if (isNegative) intPart = intPart.substring(1);
-
-  intPart = intPart.replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+$)'),
-    (match) => '${match[1]},',
-  );
-
-  return '${isNegative ? '-' : ''}€$intPart.${parts[1]}';
+  return formatEuroSmart(value);
 }
 
 String _formatCompact(double value) {
   if (value.abs() >= 1000) {
-    return '€${(value / 1000).toStringAsFixed(1)}k';
+    return '${formatEuroSmart(value / 1000)}k';
   }
-  return '€${value.toStringAsFixed(0)}';
+  return formatEuroSmart(value);
 }
 
 class _StatsSnapshot {

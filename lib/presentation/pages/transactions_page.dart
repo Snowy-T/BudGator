@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/money_formatter.dart';
 import '../../data/models/transaction_model.dart';
 import '../controllers/transaction_provider.dart';
 
@@ -296,7 +297,7 @@ class _TransactionTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isIncome ? '+' : '-'}EUR ${transaction.amount.toStringAsFixed(2)}',
+                '${isIncome ? '+' : '-'}${formatEuroSmart(transaction.amount)}',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -355,7 +356,7 @@ class _TransactionTile extends ConsumerWidget {
   Future<void> _openEditDialog(BuildContext context, WidgetRef ref) async {
     final titleController = TextEditingController(text: transaction.title);
     final amountController = TextEditingController(
-      text: transaction.amount.toStringAsFixed(2),
+      text: formatInputAmount(transaction.amount),
     );
     final categoryController = TextEditingController(
       text: transaction.category,

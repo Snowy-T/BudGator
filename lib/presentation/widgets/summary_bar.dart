@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/money_formatter.dart';
 import '../controllers/home_calculation_provider.dart';
 
 class SummaryBar extends ConsumerWidget {
@@ -75,7 +76,7 @@ class _SummaryBox extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '€${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+            formatEuroSmart(amount),
             style: TextStyle(
               color: color,
               fontSize: 18,

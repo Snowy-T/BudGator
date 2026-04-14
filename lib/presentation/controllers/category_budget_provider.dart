@@ -11,12 +11,16 @@ class CategoryBudget {
   final String name;
   final double monthlyLimit;
   final double alertThreshold;
+  final int? colorValue;
+  final String? iconKey;
 
   const CategoryBudget({
     required this.id,
     required this.name,
     required this.monthlyLimit,
     this.alertThreshold = 0.8,
+    this.colorValue,
+    this.iconKey,
   });
 
   CategoryBudget copyWith({
@@ -24,12 +28,16 @@ class CategoryBudget {
     String? name,
     double? monthlyLimit,
     double? alertThreshold,
+    int? colorValue,
+    String? iconKey,
   }) {
     return CategoryBudget(
       id: id ?? this.id,
       name: name ?? this.name,
       monthlyLimit: monthlyLimit ?? this.monthlyLimit,
       alertThreshold: alertThreshold ?? this.alertThreshold,
+      colorValue: colorValue ?? this.colorValue,
+      iconKey: iconKey ?? this.iconKey,
     );
   }
 
@@ -38,6 +46,8 @@ class CategoryBudget {
     'name': name,
     'monthlyLimit': monthlyLimit,
     'alertThreshold': alertThreshold,
+    'colorValue': colorValue,
+    'iconKey': iconKey,
   };
 
   factory CategoryBudget.fromMap(Map<String, dynamic> map) {
@@ -48,6 +58,8 @@ class CategoryBudget {
       name: (map['name'] as String?) ?? 'Kategorie',
       monthlyLimit: ((map['monthlyLimit'] as num?) ?? 0).toDouble(),
       alertThreshold: ((map['alertThreshold'] as num?) ?? 0.8).toDouble(),
+      colorValue: (map['colorValue'] as num?)?.toInt(),
+      iconKey: map['iconKey'] as String?,
     );
   }
 }
@@ -98,17 +110,55 @@ String _monthKey(DateTime date) {
 }
 
 const List<CategoryBudget> _defaultCategoryBudgets = [
-  CategoryBudget(id: 'cat-wohnen', name: 'Wohnen', monthlyLimit: 0),
-  CategoryBudget(id: 'cat-food', name: 'Lebensmittel', monthlyLimit: 0),
-  CategoryBudget(id: 'cat-transport', name: 'Transport', monthlyLimit: 0),
+  CategoryBudget(
+    id: 'cat-wohnen',
+    name: 'Wohnen',
+    monthlyLimit: 0,
+    colorValue: 0xFF1E3A8A,
+    iconKey: 'home',
+  ),
+  CategoryBudget(
+    id: 'cat-food',
+    name: 'Lebensmittel',
+    monthlyLimit: 0,
+    colorValue: 0xFF10B981,
+    iconKey: 'food',
+  ),
+  CategoryBudget(
+    id: 'cat-transport',
+    name: 'Transport',
+    monthlyLimit: 0,
+    colorValue: 0xFFEF4444,
+    iconKey: 'car',
+  ),
   CategoryBudget(
     id: 'cat-entertainment',
     name: 'Unterhaltung',
     monthlyLimit: 0,
+    colorValue: 0xFF7C3AED,
+    iconKey: 'movie',
   ),
-  CategoryBudget(id: 'cat-shopping', name: 'Shopping', monthlyLimit: 0),
-  CategoryBudget(id: 'cat-cafe', name: 'Cafe', monthlyLimit: 0),
-  CategoryBudget(id: 'cat-general', name: 'General', monthlyLimit: 0),
+  CategoryBudget(
+    id: 'cat-shopping',
+    name: 'Shopping',
+    monthlyLimit: 0,
+    colorValue: 0xFFF59E0B,
+    iconKey: 'cart',
+  ),
+  CategoryBudget(
+    id: 'cat-cafe',
+    name: 'Cafe',
+    monthlyLimit: 0,
+    colorValue: 0xFF8B4513,
+    iconKey: 'food',
+  ),
+  CategoryBudget(
+    id: 'cat-general',
+    name: 'General',
+    monthlyLimit: 0,
+    colorValue: 0xFF4CAF50,
+    iconKey: 'general',
+  ),
 ];
 
 class MonthlyTotalBudgetNotifier extends StateNotifier<double> {
@@ -167,7 +217,12 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
     return _storage.saveCategoryBudgets(state.map((e) => e.toMap()).toList());
   }
 
-  bool addCategory(String name, {double monthlyLimit = 0}) {
+  bool addCategory(
+    String name, {
+    double monthlyLimit = 0,
+    int? colorValue,
+    String? iconKey,
+  }) {
     if (name.trim().isEmpty || monthlyLimit < 0) return false;
 
     final normalized = name.trim().toLowerCase();
@@ -180,8 +235,27 @@ class CategoryBudgetNotifier extends StateNotifier<List<CategoryBudget>> {
         id: 'cat-${DateTime.now().millisecondsSinceEpoch}',
         name: name.trim(),
         monthlyLimit: monthlyLimit,
+        colorValue: colorValue,
+        iconKey: iconKey,
       ),
     ];
+    unawaited(_save());
+    return true;
+  }
+
+  bool updateStyle({required String id, int? colorValue, String? iconKey}) {
+    var found = false;
+    state = [
+      for (final budget in state)
+        if (budget.id == id)
+          () {
+            found = true;
+            return budget.copyWith(colorValue: colorValue, iconKey: iconKey);
+          }()
+        else
+          budget,
+    ];
+    if (!found) return false;
     unawaited(_save());
     return true;
   }

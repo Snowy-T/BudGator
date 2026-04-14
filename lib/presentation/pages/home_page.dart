@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/services/money_formatter.dart';
 import '../../core/services/google_pay_notification_service.dart';
 import '../../data/models/transaction_model.dart';
 import '../controllers/category_budget_provider.dart';
@@ -560,7 +561,7 @@ class _HomePageState extends ConsumerState<HomePage>
         ? 'General'
         : (categories.isNotEmpty ? categories.first : 'General');
     final amountController = TextEditingController(
-      text: (event.amount ?? 0).toStringAsFixed(2),
+      text: formatInputAmount(event.amount ?? 0),
     );
     final titleController = TextEditingController(
       text: event.title.isNotEmpty ? event.title : 'Google Pay Zahlung',

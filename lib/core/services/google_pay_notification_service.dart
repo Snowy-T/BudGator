@@ -27,16 +27,10 @@ class GooglePayNotificationEvent {
     final text = (raw['text'] as String?)?.trim() ?? '';
     final bigText = (raw['bigText'] as String?)?.trim() ?? '';
     final subText = (raw['subText'] as String?)?.trim() ?? '';
-    final amount =
-        _toDouble(raw['amount']) ??
-        _parseAmountFromText(
-          [
-            title,
-            text,
-            bigText,
-            subText,
-          ].where((it) => it.isNotEmpty).join(' '),
-        );
+    final parsedFromText = _parseAmountFromText(
+      [title, text, bigText, subText].where((it) => it.isNotEmpty).join(' '),
+    );
+    final amount = parsedFromText ?? _toDouble(raw['amount']);
     final timestampMs = (raw['timestamp'] as num?)?.toInt();
 
     return GooglePayNotificationEvent(
@@ -77,9 +71,47 @@ class GooglePayNotificationEvent {
     final raw = match?.group(1);
     if (raw == null) return null;
 
-    return double.tryParse(
-      raw.replaceAll(' ', '').replaceAll('.', '').replaceAll(',', '.'),
-    );
+    return _parseFlexibleNumber(raw);
+  }
+
+  static double? _parseFlexibleNumber(String raw) {
+    final compact = raw.replaceAll(' ', '').trim();
+    if (compact.isEmpty) return null;
+
+    final hasComma = compact.contains(',');
+    final hasDot = compact.contains('.');
+
+    if (hasComma && hasDot) {
+      // Last separator is decimal, the other one is thousand separator.
+      final lastComma = compact.lastIndexOf(',');
+      final lastDot = compact.lastIndexOf('.');
+      if (lastComma > lastDot) {
+        return double.tryParse(
+          compact.replaceAll('.', '').replaceAll(',', '.'),
+        );
+      }
+      return double.tryParse(compact.replaceAll(',', ''));
+    }
+
+    if (hasComma) {
+      final parts = compact.split(',');
+      if (parts.length > 1 && parts.last.length <= 2) {
+        return double.tryParse(
+          compact.replaceAll('.', '').replaceAll(',', '.'),
+        );
+      }
+      return double.tryParse(compact.replaceAll(',', ''));
+    }
+
+    if (hasDot) {
+      final parts = compact.split('.');
+      if (parts.length > 1 && parts.last.length <= 2) {
+        return double.tryParse(compact);
+      }
+      return double.tryParse(compact.replaceAll('.', ''));
+    }
+
+    return double.tryParse(compact);
   }
 }
 

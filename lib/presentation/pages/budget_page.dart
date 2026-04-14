@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/transaction_model.dart';
+import '../../core/services/money_formatter.dart';
+import '../theme/category_colors.dart';
 
 import '../controllers/category_budget_provider.dart';
 import '../controllers/savings_goal_provider.dart';
@@ -185,10 +187,25 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: () => _openEditBudgetDialog(context, ref),
-                      icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Bearbeiten'),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${categories.length} aktiv',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -221,13 +238,26 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                     itemBuilder: (context, index) {
                       final category = categories[index];
                       final spent = monthExpenses[category.name] ?? 0;
-                      final isOver = spent > category.monthlyLimit;
+                      final hasAssignedBudget = category.monthlyLimit > 0;
+                      final isOver =
+                          hasAssignedBudget && spent > category.monthlyLimit;
 
                       return _CategoryAllocationCard(
                         name: category.name,
                         allocated: category.monthlyLimit,
                         spent: spent,
                         isOver: isOver,
+                        isUnassigned: !hasAssignedBudget,
+                        color: category.colorValue != null
+                            ? Color(category.colorValue!)
+                            : (categoryColors[category.name] ??
+                                  Theme.of(context).colorScheme.primary),
+                        icon: iconForKey(
+                          category.iconKey,
+                          fallback:
+                              categoryIcons[category.name] ??
+                              Icons.category_rounded,
+                        ),
                         onTap: () => _openEditCategoryDialog(
                           context,
                           ref,
@@ -271,7 +301,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
   ) async {
     final current = ref.read(monthlyTotalBudgetProvider);
     final controller = TextEditingController(
-      text: current > 0 ? current.toStringAsFixed(0) : '',
+      text: current > 0 ? formatInputAmount(current) : '',
     );
 
     final confirmed = await showDialog<bool>(
@@ -332,7 +362,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         builder: (ctx) => AlertDialog(
           title: const Text('Warnung'),
           content: Text(
-            'Das neue Budget (€${parsed.toStringAsFixed(0)}) ist kleiner als die bereits verteilten Kategorien (€${totalAllocated.toStringAsFixed(0)}).\n\nBitte passen Sie die Kategorien an.',
+            'Das neue Budget (${formatEuroSmart(parsed)}) ist kleiner als die bereits verteilten Kategorien (${formatEuroSmart(totalAllocated)}).\n\nBitte passen Sie die Kategorien an.',
           ),
           actions: [
             TextButton(
@@ -363,6 +393,8 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
   ) async {
     final nameController = TextEditingController();
     final allocController = TextEditingController();
+    var selectedColor = selectableCategoryColors.first;
+    var selectedIconKey = selectableCategoryIcons.keys.first;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -400,6 +432,46 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Farbe',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                StatefulBuilder(
+                  builder: (context, setLocalState) => _ColorPickerWrap(
+                    selectedColor: selectedColor,
+                    onColorSelected: (color) {
+                      setLocalState(() => selectedColor = color);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Icon',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                StatefulBuilder(
+                  builder: (context, setLocalState) => _IconPickerGrid(
+                    selectedIconKey: selectedIconKey,
+                    onIconSelected: (iconKey) {
+                      setLocalState(() => selectedIconKey = iconKey);
+                    },
                   ),
                 ),
               ],
@@ -446,7 +518,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Budget würde überschritten. Verfügbar: €${(monthlyBudget - totalAllocated).toStringAsFixed(0)}',
+            'Budget würde überschritten. Verfügbar: ${formatEuroSmart(monthlyBudget - totalAllocated)}',
           ),
         ),
       );
@@ -455,7 +527,12 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
 
     final added = ref
         .read(categoryBudgetProvider.notifier)
-        .addCategory(name, monthlyLimit: allocAmount);
+        .addCategory(
+          name,
+          monthlyLimit: allocAmount,
+          colorValue: selectedColor.toARGB32(),
+          iconKey: selectedIconKey,
+        );
 
     if (!added) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -479,8 +556,13 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     double monthlyBudget,
   ) async {
     final controller = TextEditingController(
-      text: category.monthlyLimit.toStringAsFixed(0),
+      text: formatInputAmount(category.monthlyLimit),
     );
+    var selectedColor = category.colorValue != null
+        ? Color(category.colorValue!)
+        : (categoryColors[category.name] ?? selectableCategoryColors.first);
+    var selectedIconKey =
+        category.iconKey ?? selectableCategoryIcons.keys.first;
 
     final action = await showDialog<String>(
       context: context,
@@ -503,6 +585,46 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Farbe',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              StatefulBuilder(
+                builder: (context, setLocalState) => _ColorPickerWrap(
+                  selectedColor: selectedColor,
+                  onColorSelected: (color) {
+                    setLocalState(() => selectedColor = color);
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Icon',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              StatefulBuilder(
+                builder: (context, setLocalState) => _IconPickerGrid(
+                  selectedIconKey: selectedIconKey,
+                  onIconSelected: (iconKey) {
+                    setLocalState(() => selectedIconKey = iconKey);
+                  },
                 ),
               ),
             ],
@@ -556,7 +678,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Budget würde überschritten. Max: €${(monthlyBudget - otherAllocated).toStringAsFixed(0)}',
+              'Budget würde überschritten. Max: ${formatEuroSmart(monthlyBudget - otherAllocated)}',
             ),
           ),
         );
@@ -566,51 +688,18 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       ref
           .read(categoryBudgetProvider.notifier)
           .setLimit(category.id, newAmount);
+      ref
+          .read(categoryBudgetProvider.notifier)
+          .updateStyle(
+            id: category.id,
+            colorValue: selectedColor.toARGB32(),
+            iconKey: selectedIconKey,
+          );
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Kategorie aktualisiert')));
       setState(() {});
     }
-  }
-
-  Future<void> _openEditBudgetDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final monthlyBudget = ref.read(monthlyTotalBudgetProvider);
-    final categories = ref.read(categoryBudgetProvider);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Budget übersicht'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gesamtbudget: €${monthlyBudget.toStringAsFixed(0)}'),
-            const SizedBox(height: 12),
-            Text('Kategorien (${categories.length}):'),
-            const SizedBox(height: 8),
-            ...categories
-                .take(5)
-                .map(
-                  (cat) => Text(
-                    '  • ${cat.name}: €${cat.monthlyLimit.toStringAsFixed(0)}',
-                  ),
-                ),
-            if (categories.length > 5)
-              Text('  ... und ${categories.length - 5} weitere'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -773,7 +862,7 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '€${totalMonthlyBudget.toStringAsFixed(0)}',
+                      formatEuroSmart(totalMonthlyBudget),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -787,7 +876,7 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
                 children: [
                   const Text('Ausgegeben', style: TextStyle(fontSize: 12)),
                   Text(
-                    '€${totalSpent.toStringAsFixed(0)}',
+                    formatEuroSmart(totalSpent),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -815,11 +904,11 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Verteilt: €${totalAllocated.toStringAsFixed(0)}',
+                'Verteilt: ${formatEuroSmart(totalAllocated)}',
                 style: const TextStyle(fontSize: 12),
               ),
               Text(
-                'Verfügbar: €${availableToAllocate.toStringAsFixed(0)}',
+                'Verfügbar: ${formatEuroSmart(availableToAllocate)}',
                 style: TextStyle(
                   fontSize: 12,
                   color: availableToAllocate < 0 ? Colors.red : Colors.green,
@@ -839,6 +928,9 @@ class _CategoryAllocationCard extends StatelessWidget {
   final double allocated;
   final double spent;
   final bool isOver;
+  final bool isUnassigned;
+  final Color color;
+  final IconData icon;
   final VoidCallback onTap;
 
   const _CategoryAllocationCard({
@@ -846,6 +938,9 @@ class _CategoryAllocationCard extends StatelessWidget {
     required this.allocated,
     required this.spent,
     required this.isOver,
+    required this.isUnassigned,
+    required this.color,
+    required this.icon,
     required this.onTap,
   });
 
@@ -854,6 +949,9 @@ class _CategoryAllocationCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final progress = allocated > 0 ? (spent / allocated).clamp(0.0, 1.0) : 0.0;
     final remaining = allocated - spent;
+    final statusColor = isUnassigned
+        ? Colors.blue.shade500
+        : (isOver ? Colors.red.shade500 : color);
 
     return GestureDetector(
       onTap: onTap,
@@ -863,7 +961,9 @@ class _CategoryAllocationCard extends StatelessWidget {
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isOver ? Colors.red.shade200 : colorScheme.outlineVariant,
+            color: isUnassigned
+                ? Colors.blue.shade200
+                : (isOver ? Colors.red.shade200 : colorScheme.outlineVariant),
           ),
         ),
         child: Column(
@@ -872,19 +972,35 @@ class _CategoryAllocationCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(icon, color: color, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
-                  '€${spent.toStringAsFixed(0)} / €${allocated.toStringAsFixed(0)}',
+                  '${formatEuroSmart(spent)} / ${formatEuroSmart(allocated)}',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isOver ? Colors.red : colorScheme.onSurfaceVariant,
+                    color: isUnassigned
+                        ? Colors.blue.shade700
+                        : (isOver ? Colors.red : colorScheme.onSurfaceVariant),
                   ),
                 ),
               ],
@@ -896,16 +1012,26 @@ class _CategoryAllocationCard extends StatelessWidget {
                 minHeight: 6,
                 value: progress,
                 backgroundColor: colorScheme.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation(
-                  isOver ? Colors.red.shade500 : Colors.orange.shade400,
-                ),
+                valueColor: AlwaysStoppedAnimation(statusColor),
               ),
             ),
+            if (isUnassigned)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Kein Budget gesetzt',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             if (remaining < 0)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  'Überschritten um €${(-remaining).toStringAsFixed(0)}',
+                  'Überschritten um ${formatEuroSmart(-remaining)}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: Colors.red,
@@ -925,7 +1051,519 @@ class _SavingsGoalsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const Center(child: Text('Sparziele werden hier angezeigt'));
+    final goals = ref.watch(savingsGoalProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    Future<void> openGoalDialog({SavingsGoal? goal}) async {
+      final nameController = TextEditingController(text: goal?.name ?? '');
+      final targetController = TextEditingController(
+        text: goal == null ? '' : formatInputAmount(goal.target),
+      );
+      final currentController = TextEditingController(
+        text: goal == null ? '' : formatInputAmount(goal.current),
+      );
+      final monthlyController = TextEditingController(
+        text: goal == null ? '' : formatInputAmount(goal.monthlyContribution),
+      );
+      var contributionDay =
+          goal?.contributionDay ?? monthlyContributionDayOptions.first;
+      var selectedColor = goal?.colorValue != null
+          ? Color(goal!.colorValue!)
+          : selectableCategoryColors.first;
+      var isActive = goal?.isActive ?? true;
+
+      final action = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setLocalState) {
+              return AlertDialog(
+                title: Text(
+                  goal == null ? 'Sparziel erstellen' : 'Sparziel bearbeiten',
+                ),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            hintText: 'z.B. Notgroschen',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: targetController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Zielbetrag',
+                            hintText: 'z.B. 5000',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: currentController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Bereits gespart',
+                            hintText: 'z.B. 600',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: monthlyController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Monatlicher Abzug',
+                            hintText: 'z.B. 150',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<int>(
+                          initialValue: contributionDay,
+                          decoration: const InputDecoration(
+                            labelText: 'Abbuchungstag',
+                          ),
+                          items: monthlyContributionDayOptions
+                              .map(
+                                (day) => DropdownMenuItem<int>(
+                                  value: day,
+                                  child: Text('$day. des Monats'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setLocalState(() => contributionDay = value);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: isActive,
+                          onChanged: (value) =>
+                              setLocalState(() => isActive = value),
+                          title: const Text('Automatik aktiv'),
+                          subtitle: const Text(
+                            'Monatlichen Abzug automatisch verbuchen',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Farbe',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _ColorPickerWrap(
+                          selectedColor: selectedColor,
+                          onColorSelected: (color) {
+                            setLocalState(() => selectedColor = color);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  if (goal != null)
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop('delete'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: colorScheme.error,
+                      ),
+                      child: const Text('Löschen'),
+                    ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop('cancel'),
+                    child: const Text('Abbrechen'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop('save'),
+                    child: const Text('Speichern'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (action == null || action == 'cancel' || !context.mounted) return;
+
+      if (action == 'delete' && goal != null) {
+        ref.read(savingsGoalProvider.notifier).deleteGoal(goal.id);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sparziel gelöscht')));
+        return;
+      }
+
+      final name = nameController.text.trim();
+      final target = _parseMoney(targetController.text);
+      final current = _parseMoney(currentController.text) ?? 0;
+      final monthly = _parseMoney(monthlyController.text) ?? 0;
+
+      if (name.isEmpty ||
+          target == null ||
+          target <= 0 ||
+          current < 0 ||
+          monthly < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bitte valide Werte eingeben.')),
+        );
+        return;
+      }
+
+      if (current > target) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bereits gespart darf Ziel nicht überschreiten.'),
+          ),
+        );
+        return;
+      }
+
+      if (goal == null) {
+        ref
+            .read(savingsGoalProvider.notifier)
+            .addGoal(
+              name: name,
+              target: target,
+              current: current,
+              monthlyContribution: monthly,
+              isActive: isActive,
+              colorValue: selectedColor.toARGB32(),
+              contributionDay: contributionDay,
+            );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sparziel erstellt')));
+      } else {
+        ref
+            .read(savingsGoalProvider.notifier)
+            .updateGoal(
+              id: goal.id,
+              name: name,
+              target: target,
+              current: current,
+              monthlyContribution: monthly,
+              isActive: isActive,
+              colorValue: selectedColor.toARGB32(),
+              contributionDay: contributionDay,
+            );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sparziel aktualisiert')));
+      }
+    }
+
+    Future<void> addManualContribution(SavingsGoal goal) async {
+      final controller = TextEditingController();
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('In ${goal.name} einzahlen'),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Betrag',
+              hintText: 'z.B. 100',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Abbrechen'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Einzahlen'),
+            ),
+          ],
+        ),
+      );
+
+      if (ok != true || !context.mounted) return;
+
+      final amount = _parseMoney(controller.text);
+      if (amount == null || amount <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bitte gültigen Betrag eingeben.')),
+        );
+        return;
+      }
+
+      final applied = ref
+          .read(savingsGoalProvider.notifier)
+          .addCurrentToGoal(goal.id, amount);
+      if (applied <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ziel ist bereits voll erreicht.')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${formatEuroSmart(applied)} eingezahlt')),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FilledButton.icon(
+              onPressed: () => openGoalDialog(),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Neues Sparziel'),
+            ),
+            const SizedBox(height: 14),
+            if (goals.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Text(
+                  'Noch keine Sparziele. Lege ein Ziel mit monatlichem Abzug an.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: goals.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final goal = goals[index];
+                  final progress = goal.target <= 0
+                      ? 0.0
+                      : (goal.current / goal.target).clamp(0.0, 1.0);
+                  final accent = goal.colorValue != null
+                      ? Color(goal.colorValue!)
+                      : const Color(0xFF16A34A);
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.savings_rounded,
+                                color: accent,
+                                size: 17,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                goal.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            Switch(
+                              value: goal.isActive,
+                              onChanged: (_) {
+                                ref
+                                    .read(savingsGoalProvider.notifier)
+                                    .toggleActive(goal.id);
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            minHeight: 9,
+                            value: progress,
+                            backgroundColor:
+                                colorScheme.surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation(accent),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${formatEuroSmart(goal.current)} von ${formatEuroSmart(goal.target)}',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Monatlicher Abzug: ${formatEuroSmart(goal.monthlyContribution)}',
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Abbuchung: ${goal.contributionDay}. des Monats',
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => addManualContribution(goal),
+                                icon: const Icon(Icons.add_card_rounded),
+                                label: const Text('Einzahlen'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: () => openGoalDialog(goal: goal),
+                                icon: const Icon(Icons.edit_rounded),
+                                label: const Text('Bearbeiten'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorPickerWrap extends StatelessWidget {
+  final Color selectedColor;
+  final ValueChanged<Color> onColorSelected;
+
+  const _ColorPickerWrap({
+    required this.selectedColor,
+    required this.onColorSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final color in selectableCategoryColors)
+          GestureDetector(
+            onTap: () => onColorSelected(color),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selectedColor.toARGB32() == color.toARGB32()
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: selectedColor.toARGB32() == color.toARGB32()
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _IconPickerGrid extends StatelessWidget {
+  final String selectedIconKey;
+  final ValueChanged<String> onIconSelected;
+
+  const _IconPickerGrid({
+    required this.selectedIconKey,
+    required this.onIconSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final keys = selectableCategoryIcons.keys.toList();
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final key in keys)
+          GestureDetector(
+            onTap: () => onIconSelected(key),
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: selectedIconKey == key
+                    ? colorScheme.primary.withValues(alpha: 0.16)
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: selectedIconKey == key
+                      ? colorScheme.primary
+                      : colorScheme.outlineVariant,
+                ),
+              ),
+              child: Icon(
+                selectableCategoryIcons[key],
+                size: 18,
+                color: selectedIconKey == key
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 

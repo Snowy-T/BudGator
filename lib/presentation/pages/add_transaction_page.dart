@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/money_formatter.dart';
 import '../controllers/category_budget_provider.dart';
 import '../controllers/transaction_provider.dart';
 import '../../data/models/transaction_model.dart';
@@ -17,6 +18,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   final TextEditingController _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _category = 'General';
+  String _incomeCategory = 'Gehalt';
   TransactionType _type = TransactionType.expense;
 
   Future<void> _submitTransaction(String selectedCategory) async {
@@ -38,11 +40,15 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     );
     if (!canContinue || !mounted) return;
 
+    final categoryToSave = _type == TransactionType.income
+        ? _incomeCategory
+        : selectedCategory;
+
     final transaction = TransactionModel(
       title: _titleController.text,
       amount: amount,
       date: _selectedDate,
-      category: selectedCategory,
+      category: categoryToSave,
       type: _type,
     );
 
@@ -86,7 +92,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             builder: (context) => AlertDialog(
               title: const Text('Kategorie-Limit uberschritten'),
               content: Text(
-                '${activeTarget.budget.name} wurde um ${overBy.toStringAsFixed(2)} EUR uberschritten.\n\n'
+                '${activeTarget.budget.name} wurde um ${formatEuroSmart(overBy)} uberschritten.\n\n'
                 'Keine andere Kategorie hat aktuell Restbudget zum Abziehen. Trotzdem speichern?',
               ),
               actions: [
@@ -147,7 +153,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             title: const Text('Gesamtbudget uberschritten'),
             content: Text(
               'Diese Ausgabe liegt uber dem monatlichen Gesamtbudget um '
-              '${(projectedTotalSpent - summary.totalBudget).toStringAsFixed(2)} EUR. Trotzdem speichern?',
+              '${formatEuroSmart(projectedTotalSpent - summary.totalBudget)}. Trotzdem speichern?',
             ),
             actions: [
               TextButton(
@@ -176,7 +182,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   }) async {
     var selectedSource = sources.first;
     final deductionController = TextEditingController(
-      text: overBy.clamp(0, selectedSource.remaining).toStringAsFixed(2),
+      text: formatInputAmount(overBy.clamp(0, selectedSource.remaining)),
     );
 
     return showDialog<_OverspendDecision>(
@@ -191,7 +197,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${target.budget.name} wurde um ${overBy.toStringAsFixed(2)} EUR uberschritten.',
+                    '${target.budget.name} wurde um ${formatEuroSmart(overBy)} uberschritten.',
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -209,7 +215,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         (source) => DropdownMenuItem(
                           value: source.budget.id,
                           child: Text(
-                            '${source.budget.name} (frei: ${source.remaining.toStringAsFixed(2)} EUR)',
+                            '${source.budget.name} (frei: ${formatEuroSmart(source.remaining)})',
                           ),
                         ),
                       )
@@ -221,9 +227,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     );
                     setModalState(() {
                       selectedSource = next;
-                      deductionController.text = overBy
-                          .clamp(0, selectedSource.remaining)
-                          .toStringAsFixed(2);
+                      deductionController.text = formatInputAmount(
+                        overBy.clamp(0, selectedSource.remaining),
+                      );
                     });
                   },
                   decoration: const InputDecoration(
@@ -435,7 +441,14 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           )
                           .toList(),
                       onChanged: (val) {
-                        if (val != null) setState(() => _type = val);
+                        if (val != null) {
+                          setState(() {
+                            _type = val;
+                            if (_type == TransactionType.income) {
+                              _incomeCategory = 'Gehalt';
+                            }
+                          });
+                        }
                       },
                       decoration: InputDecoration(
                         labelText: 'Typ',
@@ -465,43 +478,93 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      items: (categories.isNotEmpty ? categories : ['General'])
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _category = val);
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Kategorie',
-                        prefixIcon: Icon(
-                          Icons.category_rounded,
-                          color: colorScheme.primary,
-                        ),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colorScheme.outline),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: colorScheme.outlineVariant,
+                    if (_type == TransactionType.expense)
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedCategory,
+                        items:
+                            (categories.isNotEmpty ? categories : ['General'])
+                                .map(
+                                  (c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _category = val);
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Kategorie',
+                          prefixIcon: Icon(
+                            Icons.category_rounded,
+                            color: colorScheme.primary,
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outline),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.outlineVariant,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
+                      )
+                    else
+                      DropdownButtonFormField<String>(
+                        initialValue: _incomeCategory,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Gehalt',
+                            child: Text('Gehalt'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Andere Einnahme',
+                            child: Text('Andere Einnahme'),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _incomeCategory = val);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Einnahme-Typ',
+                          prefixIcon: Icon(
+                            Icons.payments_rounded,
                             color: colorScheme.primary,
-                            width: 2,
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: colorScheme.outline),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.outlineVariant,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 12),
                     InputDecorator(
                       decoration: InputDecoration(

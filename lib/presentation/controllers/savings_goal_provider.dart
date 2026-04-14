@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/app_local_storage.dart';
 
+const List<int> monthlyContributionDayOptions = [1, 7, 15, 25];
+
 class SavingsGoal {
   final String id;
   final String name;
@@ -12,6 +14,8 @@ class SavingsGoal {
   final double monthlyContribution;
   final bool isActive;
   final String? lastAutoContributionMonth;
+  final int? colorValue;
+  final int contributionDay;
 
   const SavingsGoal({
     required this.id,
@@ -21,6 +25,8 @@ class SavingsGoal {
     required this.monthlyContribution,
     required this.isActive,
     this.lastAutoContributionMonth,
+    this.colorValue,
+    this.contributionDay = 1,
   });
 
   SavingsGoal copyWith({
@@ -31,6 +37,8 @@ class SavingsGoal {
     double? monthlyContribution,
     bool? isActive,
     String? lastAutoContributionMonth,
+    int? colorValue,
+    int? contributionDay,
   }) {
     return SavingsGoal(
       id: id ?? this.id,
@@ -41,6 +49,8 @@ class SavingsGoal {
       isActive: isActive ?? this.isActive,
       lastAutoContributionMonth:
           lastAutoContributionMonth ?? this.lastAutoContributionMonth,
+      colorValue: colorValue ?? this.colorValue,
+      contributionDay: contributionDay ?? this.contributionDay,
     );
   }
 
@@ -52,6 +62,8 @@ class SavingsGoal {
     'monthlyContribution': monthlyContribution,
     'isActive': isActive,
     'lastAutoContributionMonth': lastAutoContributionMonth,
+    'colorValue': colorValue,
+    'contributionDay': contributionDay,
   };
 
   factory SavingsGoal.fromMap(Map<String, dynamic> map) {
@@ -66,8 +78,18 @@ class SavingsGoal {
           .toDouble(),
       isActive: (map['isActive'] as bool?) ?? true,
       lastAutoContributionMonth: map['lastAutoContributionMonth'] as String?,
+      colorValue: (map['colorValue'] as num?)?.toInt(),
+      contributionDay: _normalizeContributionDay(
+        (map['contributionDay'] as num?)?.toInt(),
+      ),
     );
   }
+}
+
+int _normalizeContributionDay(int? value) {
+  if (value == null) return monthlyContributionDayOptions.first;
+  if (monthlyContributionDayOptions.contains(value)) return value;
+  return monthlyContributionDayOptions.first;
 }
 
 String _monthKey(DateTime date) {
@@ -110,6 +132,8 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
     double monthlyContribution = 0,
     double current = 0,
     bool isActive = true,
+    int? colorValue,
+    int contributionDay = 1,
   }) {
     if (name.trim().isEmpty ||
         target <= 0 ||
@@ -125,6 +149,8 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       current: current,
       monthlyContribution: monthlyContribution,
       isActive: isActive,
+      colorValue: colorValue,
+      contributionDay: _normalizeContributionDay(contributionDay),
     );
 
     state = [...state, goal];
@@ -138,6 +164,8 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
     required double monthlyContribution,
     required double current,
     required bool isActive,
+    int? colorValue,
+    int? contributionDay,
   }) {
     if (name.trim().isEmpty ||
         target <= 0 ||
@@ -155,6 +183,10 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
             monthlyContribution: monthlyContribution,
             current: current,
             isActive: isActive,
+            colorValue: colorValue,
+            contributionDay: contributionDay == null
+                ? goal.contributionDay
+                : _normalizeContributionDay(contributionDay),
           )
         else
           goal,
@@ -230,6 +262,7 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       if (!goal.isActive ||
           goal.monthlyContribution <= 0 ||
           goal.current >= goal.target ||
+          currentDate.day < goal.contributionDay ||
           goal.lastAutoContributionMonth == monthKey) {
         updated.add(goal);
         continue;
@@ -279,6 +312,8 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       monthlyContribution: first.monthlyContribution,
       current: first.current,
       isActive: first.isActive,
+      colorValue: first.colorValue,
+      contributionDay: first.contributionDay,
     );
   }
 

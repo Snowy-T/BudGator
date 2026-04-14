@@ -25,3 +25,36 @@ const Map<String, IconData> categoryIcons = {
   'Entertainment': Icons.theaters_rounded,
   'General': Icons.category_rounded,
 };
+
+const List<Color> selectableCategoryColors = [
+  Color(0xFF1E7A4E),
+  Color(0xFF0EA5E9),
+  Color(0xFFF59E0B),
+  Color(0xFFEF4444),
+  Color(0xFF8B5CF6),
+  Color(0xFFEC4899),
+  Color(0xFF334155),
+  Color(0xFF14B8A6),
+  Color(0xFF22C55E),
+  Color(0xFF64748B),
+];
+
+const Map<String, IconData> selectableCategoryIcons = {
+  'wallet': Icons.account_balance_wallet_rounded,
+  'cart': Icons.shopping_cart_rounded,
+  'home': Icons.home_rounded,
+  'food': Icons.restaurant_rounded,
+  'car': Icons.directions_car_rounded,
+  'train': Icons.train_rounded,
+  'movie': Icons.movie_rounded,
+  'gift': Icons.redeem_rounded,
+  'fitness': Icons.fitness_center_rounded,
+  'savings': Icons.savings_rounded,
+  'travel': Icons.flight_takeoff_rounded,
+  'general': Icons.category_rounded,
+};
+
+IconData iconForKey(String? key, {IconData fallback = Icons.category_rounded}) {
+  if (key == null) return fallback;
+  return selectableCategoryIcons[key] ?? fallback;
+}

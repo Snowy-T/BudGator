@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/money_formatter.dart';
 import '../controllers/category_budget_provider.dart';
 import '../controllers/home_calculation_provider.dart';
 import '../controllers/savings_goal_provider.dart';
@@ -11,14 +12,7 @@ import '../../data/models/transaction_model.dart';
 import '../theme/category_colors.dart';
 
 String formatAmount(double amount) {
-  final formatted = amount.toStringAsFixed(2);
-  final parts = formatted.split('.');
-  var intPart = parts[0];
-  intPart = intPart.replaceAllMapped(
-    RegExp(r'(\d)(?=(\d{3})+$)'),
-    (m) => '${m[1]},',
-  );
-  return '€$intPart.${parts[1]}';
+  return formatEuroSmart(amount);
 }
 
 String formatWeekdayOrDate(DateTime date) {
@@ -69,6 +63,7 @@ class SensitiveText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final child = Text(
       text,
       style: style,
@@ -82,10 +77,40 @@ class SensitiveText extends StatelessWidget {
       return child;
     }
 
-    return ClipRect(
-      child: ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: child,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: child,
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.surface.withValues(alpha: 0.2),
+                    colorScheme.surface.withValues(alpha: 0.45),
+                    colorScheme.surface.withValues(alpha: 0.2),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          const Positioned.fill(
+            child: Center(
+              child: Text(
+                '••••••',
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -96,22 +121,33 @@ class BalanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final balance = ref.watch(balanceProvider);
     final income = ref.watch(totalIncomeProvider);
     final expenses = ref.watch(totalExpensesProvider);
     final monthlySummary = ref.watch(monthlyBudgetSummaryProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
+    final onTopColor = isDark ? const Color(0xFFE8FBF2) : Colors.white;
+    final onTopMuted = onTopColor.withValues(alpha: 0.86);
+    final balanceColor = balance >= 0 ? onTopColor : const Color(0xFFFFE2E2);
+    final gradient = isDark
+        ? const [Color(0xFF0A7A56), Color(0xFF0E5D45)]
+        : const [Color(0xFF16A36A), Color(0xFF0D7A4F)];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF098825)],
+        gradient: LinearGradient(
+          colors: gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,10 +157,7 @@ class BalanceCard extends ConsumerWidget {
             children: [
               Text(
                 'Verfügbarer Saldo',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: onTopMuted, fontSize: 14),
               ),
               GestureDetector(
                 onTap: () {
@@ -135,7 +168,7 @@ class BalanceCard extends ConsumerWidget {
                   isVisible
                       ? Icons.visibility_rounded
                       : Icons.visibility_off_rounded,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: onTopMuted,
                   size: 20,
                 ),
               ),
@@ -143,11 +176,10 @@ class BalanceCard extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           SensitiveText(
-            text:
-                '€${balance.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+            text: formatEuroSmart(balance),
             isVisible: isVisible,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: balanceColor,
               fontSize: 36,
               fontWeight: FontWeight.bold,
             ),
@@ -162,6 +194,7 @@ class BalanceCard extends ConsumerWidget {
                   amount: income,
                   icon: Icons.arrow_downward_rounded,
                   isVisible: isVisible,
+                  textColor: onTopColor,
                 ),
               ),
               const SizedBox(width: 12),
@@ -171,6 +204,7 @@ class BalanceCard extends ConsumerWidget {
                   amount: expenses,
                   icon: Icons.arrow_upward_rounded,
                   isVisible: isVisible,
+                  textColor: onTopColor,
                 ),
               ),
             ],
@@ -183,6 +217,8 @@ class BalanceCard extends ConsumerWidget {
               icon: Icons.wallet_rounded,
               isVisible: isVisible,
               isMonthlyBudget: true,
+              textColor: onTopColor,
+              totalBudget: monthlySummary.totalBudget,
             ),
           ],
         ],
@@ -197,6 +233,8 @@ class _InlineAmount extends StatelessWidget {
   final IconData icon;
   final bool isVisible;
   final bool isMonthlyBudget;
+  final Color textColor;
+  final double? totalBudget;
 
   const _InlineAmount({
     required this.label,
@@ -204,6 +242,8 @@ class _InlineAmount extends StatelessWidget {
     required this.icon,
     required this.isVisible,
     this.isMonthlyBudget = false,
+    required this.textColor,
+    this.totalBudget,
   });
 
   @override
@@ -225,7 +265,7 @@ class _InlineAmount extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 16),
+          Icon(icon, color: textColor, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -234,25 +274,67 @@ class _InlineAmount extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: textColor.withValues(alpha: 0.85),
                     fontSize: 11,
                   ),
                 ),
                 const SizedBox(height: 2),
                 SensitiveText(
-                  text:
-                      '€${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                  text: formatEuroSmart(amount),
                   isVisible: isVisible,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: textColor,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (isMonthlyBudget &&
+                    totalBudget != null &&
+                    totalBudget! > 0) ...[
+                  const SizedBox(height: 6),
+                  _BudgetMiniBar(
+                    totalBudget: totalBudget!,
+                    remaining: amount,
+                    color: textColor,
+                  ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BudgetMiniBar extends StatelessWidget {
+  final double totalBudget;
+  final double remaining;
+  final Color color;
+
+  const _BudgetMiniBar({
+    required this.totalBudget,
+    required this.remaining,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final spent = (totalBudget - remaining).clamp(0.0, totalBudget);
+    final usedFactor = totalBudget <= 0
+        ? 0.0
+        : (spent / totalBudget).clamp(0.0, 1.0);
+    final isOver = remaining < 0;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: LinearProgressIndicator(
+        minHeight: 6,
+        value: usedFactor,
+        backgroundColor: color.withValues(alpha: 0.22),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          isOver ? const Color(0xFFFFA1A1) : color,
+        ),
       ),
     );
   }
@@ -347,17 +429,17 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
                   children: [
                     _StatBox(
                       label: 'Gesamt',
-                      value: '€${totalExpenses.toStringAsFixed(0)}',
+                      value: formatEuroSmart(totalExpenses),
                       isVisible: isVisible,
                     ),
                     _StatBox(
                       label: 'Durchschnitt',
-                      value: '€${avgExpenses.toStringAsFixed(0)}',
+                      value: formatEuroSmart(avgExpenses),
                       isVisible: isVisible,
                     ),
                     _StatBox(
                       label: 'Max',
-                      value: '€${maxAmount.toStringAsFixed(0)}',
+                      value: formatEuroSmart(maxAmount),
                       isVisible: isVisible,
                     ),
                   ],
@@ -781,8 +863,7 @@ class TopCategoriesWidget extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         SensitiveText(
-                          text:
-                              '€${category.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                          text: formatEuroSmart(category.amount),
                           isVisible: isVisible,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -897,7 +978,7 @@ class RecentTransactionsWidget extends ConsumerWidget {
                       ),
                       SensitiveText(
                         text:
-                            '${isIncome ? '+' : '-'}€${transaction.amount.toStringAsFixed(2)}',
+                            '${isIncome ? '+' : '-'}${formatEuroSmart(transaction.amount)}',
                         isVisible: isVisible,
                         style: TextStyle(
                           fontSize: 13,
@@ -924,8 +1005,11 @@ class SavingsGoalWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final savingsGoal = ref.watch(firstSavingsGoalProvider);
-    if (savingsGoal == null) {
+    final goals = ref
+        .watch(savingsGoalProvider)
+        .where((goal) => goal.isActive)
+        .toList();
+    if (goals.isEmpty) {
       final colorScheme = Theme.of(context).colorScheme;
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -948,13 +1032,19 @@ class SavingsGoalWidget extends ConsumerWidget {
       );
     }
 
+    if (goals.length > 1) {
+      return _CompactSavingsGoalsRow(goals: goals);
+    }
+
+    final savingsGoal = goals.first;
+
     final progress = (savingsGoal.current / savingsGoal.target).clamp(0.0, 1.0);
     final isVisible = ref.watch(amountVisibilityProvider);
 
     Future<void> openEditDialog() async {
       final nameController = TextEditingController(text: savingsGoal.name);
       final targetController = TextEditingController(
-        text: savingsGoal.target.toStringAsFixed(0),
+        text: formatInputAmount(savingsGoal.target),
       );
 
       final result = await showDialog<bool>(
@@ -1013,12 +1103,16 @@ class SavingsGoalWidget extends ConsumerWidget {
       ref.read(savingsGoalProvider.notifier).updateSingleGoal(name, target);
     }
 
+    final accent = savingsGoal.colorValue != null
+        ? Color(savingsGoal.colorValue!)
+        : const Color(0xFF10B981);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFFFBBF24)],
+        gradient: LinearGradient(
+          colors: [accent, Color.lerp(accent, Colors.white, 0.2) ?? accent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1070,7 +1164,7 @@ class SavingsGoalWidget extends ConsumerWidget {
               Expanded(
                 child: SensitiveText(
                   text:
-                      '€${savingsGoal.current.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')} von €${savingsGoal.target.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}',
+                      '${formatEuroSmart(savingsGoal.current)} von ${formatEuroSmart(savingsGoal.target)}',
                   isVisible: isVisible,
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
@@ -1086,6 +1180,104 @@ class SavingsGoalWidget extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactSavingsGoalsRow extends StatelessWidget {
+  final List<SavingsGoal> goals;
+
+  const _CompactSavingsGoalsRow({required this.goals});
+
+  @override
+  Widget build(BuildContext context) {
+    final topGoals = goals.take(4).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Sparziele',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '${goals.length} aktiv',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: topGoals.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final goal = topGoals[index];
+                final progress = goal.target <= 0
+                    ? 0.0
+                    : (goal.current / goal.target).clamp(0.0, 1.0);
+                final accent = goal.colorValue != null
+                    ? Color(goal.colorValue!)
+                    : const Color(0xFF10B981);
+
+                return Container(
+                  width: 170,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: accent.withValues(alpha: 0.45)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        goal.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 7,
+                          backgroundColor: Colors.white.withValues(alpha: 0.5),
+                          valueColor: AlwaysStoppedAnimation<Color>(accent),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}% · ${formatEuroSmart(goal.current)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

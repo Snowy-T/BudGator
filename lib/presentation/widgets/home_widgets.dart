@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:budgator/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -25,22 +26,13 @@ String formatWeekdayOrDate(DateTime date) {
       !dateOnly.isBefore(startOfWeek) && dateOnly.isBefore(endOfWeek);
 
   if (isThisWeek) {
-    const weekdayNames = [
-      'Montag',
-      'Dienstag',
-      'Mittwoch',
-      'Donnerstag',
-      'Freitag',
-      'Samstag',
-      'Sonntag',
-    ];
-    return weekdayNames[dateOnly.weekday - 1];
+    return DateFormat('EEEE', Intl.getCurrentLocale()).format(dateOnly);
   }
 
   if (dateOnly.year == today.year) {
-    return DateFormat('dd.MMM', 'en_US').format(dateOnly);
+    return DateFormat('dd.MMM', Intl.getCurrentLocale()).format(dateOnly);
   }
-  return DateFormat('dd.MMM.yyyy', 'en_US').format(dateOnly);
+  return DateFormat('dd.MMM.yyyy', Intl.getCurrentLocale()).format(dateOnly);
 }
 
 final amountVisibilityProvider = StateProvider<bool>((ref) => true);
@@ -121,6 +113,7 @@ class BalanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final balance = ref.watch(balanceProvider);
@@ -156,7 +149,7 @@ class BalanceCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Verfügbarer Saldo',
+                l10n.availableBalance,
                 style: TextStyle(color: onTopMuted, fontSize: 14),
               ),
               GestureDetector(
@@ -190,7 +183,7 @@ class BalanceCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: _InlineAmount(
-                  label: 'Einnahmen',
+                  label: l10n.tabIncome,
                   amount: income,
                   icon: Icons.arrow_downward_rounded,
                   isVisible: isVisible,
@@ -200,7 +193,7 @@ class BalanceCard extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _InlineAmount(
-                  label: 'Ausgaben',
+                  label: l10n.expensesLabel,
                   amount: expenses,
                   icon: Icons.arrow_upward_rounded,
                   isVisible: isVisible,
@@ -212,7 +205,7 @@ class BalanceCard extends ConsumerWidget {
           if (monthlySummary.hasTotalBudget) ...[
             const SizedBox(height: 12),
             _InlineAmount(
-              label: 'Monatsbudget Rest',
+              label: l10n.monthlyBudgetRemainingLabel,
               amount: monthlySummary.remainingTotalBudget,
               icon: Icons.wallet_rounded,
               isVisible: isVisible,
@@ -355,6 +348,7 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final transactions = ref.watch(transactionsProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
@@ -373,7 +367,7 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
             border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: Text(
-            'Keine Ausgaben in den letzten 30 Tagen',
+            l10n.noExpensesLast30Days,
             textAlign: TextAlign.center,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
@@ -393,8 +387,8 @@ class _ExpensesByWeekWidgetState extends ConsumerState<ExpensesByWeekWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Ausgaben Trend',
+              Text(
+                l10n.expensesTrendTitle,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               _RangeSelector(
@@ -535,6 +529,7 @@ class _RangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
@@ -545,17 +540,17 @@ class _RangeSelector extends StatelessWidget {
       child: Row(
         children: [
           _RangeChip(
-            label: 'Heute',
+            label: l10n.todayLabel,
             isActive: range == _TrendRange.today,
             onTap: () => onChanged(_TrendRange.today),
           ),
           _RangeChip(
-            label: 'Woche',
+            label: l10n.weekLabel,
             isActive: range == _TrendRange.week,
             onTap: () => onChanged(_TrendRange.week),
           ),
           _RangeChip(
-            label: 'Monat',
+            label: l10n.monthLabel,
             isActive: range == _TrendRange.month,
             onTap: () => onChanged(_TrendRange.month),
           ),
@@ -801,16 +796,17 @@ class TopCategoriesWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final topCategories = ref.watch(topCategoriesProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
     final limitedCategories = topCategories.take(5).toList();
 
     if (limitedCategories.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(horizontal: 16),
         child: Text(
-          'Keine Kategorien',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          l10n.noCategoriesLabel,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       );
     }
@@ -820,8 +816,8 @@ class TopCategoriesWidget extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Top Kategorien',
+          Text(
+            l10n.topCategoriesTitle,
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
@@ -895,13 +891,14 @@ class RecentTransactionsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final recentTransactions = ref.watch(recentTransactionsProvider);
     final isVisible = ref.watch(amountVisibilityProvider);
 
     if (recentTransactions.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(horizontal: 16),
-        child: Text('Keine Transaktionen'),
+        child: Text(l10n.noTransactionsRecent),
       );
     }
 
@@ -913,15 +910,15 @@ class RecentTransactionsWidget extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Letzte Transaktionen',
+              Text(
+                l10n.recentTransactionsTitle,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               if (onShowAll != null)
                 GestureDetector(
                   onTap: onShowAll,
                   child: Text(
-                    'Alle',
+                    l10n.allAction,
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.primary,
@@ -1005,6 +1002,7 @@ class SavingsGoalWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final goals = ref
         .watch(savingsGoalProvider)
         .where((goal) => goal.isActive)
@@ -1021,11 +1019,11 @@ class SavingsGoalWidget extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Expanded(child: Text('Noch kein Sparziel aktiv.')),
+            Expanded(child: Text(l10n.noActiveSavingsGoal)),
             TextButton.icon(
               onPressed: onCreateGoalTap,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Sparziel erstellen'),
+              label: Text(l10n.createSavingsGoalAction),
             ),
           ],
         ),
@@ -1051,30 +1049,34 @@ class SavingsGoalWidget extends ConsumerWidget {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Sparziel bearbeiten'),
+            title: Text(l10n.savingsGoalEditTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Zielname'),
+                  decoration: InputDecoration(
+                    labelText: l10n.goalNameInputLabel,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: targetController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Zielbetrag'),
+                  decoration: InputDecoration(
+                    labelText: l10n.targetAmountInputLabel,
+                  ),
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Abbrechen'),
+                child: Text(l10n.cancel),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Speichern'),
+                child: Text(l10n.save),
               ),
             ],
           );
@@ -1094,9 +1096,9 @@ class SavingsGoalWidget extends ConsumerWidget {
         targetController.text.replaceAll(',', '.').trim(),
       );
       if (name.isEmpty || target == null || target <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bitte gültige Werte eingeben.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.enterValidValuesMessage)));
         return;
       }
 
@@ -1126,7 +1128,7 @@ class SavingsGoalWidget extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Sparziel: ${savingsGoal.name}',
+                  l10n.savingsGoalHeader(savingsGoal.name),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -1163,8 +1165,10 @@ class SavingsGoalWidget extends ConsumerWidget {
             children: [
               Expanded(
                 child: SensitiveText(
-                  text:
-                      '${formatEuroSmart(savingsGoal.current)} von ${formatEuroSmart(savingsGoal.target)}',
+                  text: l10n.currentOfTarget(
+                    formatEuroSmart(savingsGoal.current),
+                    formatEuroSmart(savingsGoal.target),
+                  ),
                   isVisible: isVisible,
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
@@ -1194,6 +1198,7 @@ class _CompactSavingsGoalsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final topGoals = goals.take(4).toList();
 
     return Padding(
@@ -1204,12 +1209,12 @@ class _CompactSavingsGoalsRow extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Sparziele',
+              Text(
+                l10n.savingsGoalsTitle,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               Text(
-                '${goals.length} aktiv',
+                l10n.activeCount(goals.length),
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,

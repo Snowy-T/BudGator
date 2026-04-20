@@ -7,6 +7,7 @@ class TransactionModel {
   final DateTime date;
   final String category;
   final TransactionType type;
+  final String? referenceId;
 
   TransactionModel({
     this.id,
@@ -15,6 +16,7 @@ class TransactionModel {
     required this.date,
     required this.category,
     required this.type,
+    this.referenceId,
   });
 
   Map<String, dynamic> toMap() => {
@@ -24,6 +26,7 @@ class TransactionModel {
     'date': date.toIso8601String(),
     'category': category,
     'type': type.name,
+    'referenceId': referenceId,
   };
 
   factory TransactionModel.fromMap(Map<String, dynamic> m) => TransactionModel(
@@ -36,5 +39,6 @@ class TransactionModel {
     })(),
     category: m['category'] as String,
     type: TransactionType.values.byName(m['type'] as String? ?? 'expense'),
+    referenceId: m['referenceId'] as String?,
   );
 }

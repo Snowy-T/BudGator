@@ -1,3 +1,4 @@
+import 'package:budgator/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/money_formatter.dart';
@@ -13,24 +14,28 @@ class AddTransactionPage extends ConsumerStatefulWidget {
 }
 
 class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
+  static const String _salaryIncomeKey = 'salary';
+  static const String _otherIncomeKey = 'other_income';
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _category = 'General';
-  String _incomeCategory = 'Gehalt';
+  String _incomeCategory = _salaryIncomeKey;
   TransactionType _type = TransactionType.expense;
 
   Future<void> _submitTransaction(String selectedCategory) async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(
       _amountController.text.replaceAll(',', '.').trim(),
     );
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte einen gultigen Betrag eingeben.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.invalidAmountMessage)));
       return;
     }
 
@@ -41,7 +46,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     if (!canContinue || !mounted) return;
 
     final categoryToSave = _type == TransactionType.income
-        ? _incomeCategory
+        ? (_incomeCategory == _salaryIncomeKey
+              ? l10n.salaryLabel
+              : l10n.otherIncomeLabel)
         : selectedCategory;
 
     final transaction = TransactionModel(
@@ -60,6 +67,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     required String category,
     required double amount,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_type != TransactionType.expense) return true;
 
     final progressList = ref.read(categoryBudgetProgressProvider);
@@ -90,19 +98,21 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           final continueWithoutDeduction = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Kategorie-Limit uberschritten'),
+              title: Text(l10n.overspendCategoryLimitTitle),
               content: Text(
-                '${activeTarget.budget.name} wurde um ${formatEuroSmart(overBy)} uberschritten.\n\n'
-                'Keine andere Kategorie hat aktuell Restbudget zum Abziehen. Trotzdem speichern?',
+                l10n.overspendNoSourceMessage(
+                  activeTarget.budget.name,
+                  formatEuroSmart(overBy),
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Abbrechen'),
+                  child: Text(l10n.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Trotzdem speichern'),
+                  child: Text(l10n.saveAnywayAction),
                 ),
               ],
             ),
@@ -128,11 +138,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             if (!deducted) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Abzug aus der Kategorie konnte nicht gespeichert werden.',
-                    ),
-                  ),
+                  SnackBar(content: Text(l10n.deductionSaveFailed)),
                 );
               }
               return false;
@@ -150,19 +156,20 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         final proceed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Gesamtbudget uberschritten'),
+            title: Text(l10n.overspendTotalBudgetTitle),
             content: Text(
-              'Diese Ausgabe liegt uber dem monatlichen Gesamtbudget um '
-              '${formatEuroSmart(projectedTotalSpent - summary.totalBudget)}. Trotzdem speichern?',
+              l10n.overspendTotalBudgetMessage(
+                formatEuroSmart(projectedTotalSpent - summary.totalBudget),
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Abbrechen'),
+                child: Text(l10n.cancel),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Trotzdem speichern'),
+                child: Text(l10n.saveAnywayAction),
               ),
             ],
           ),
@@ -180,6 +187,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     required double overBy,
     required List<CategoryBudgetProgress> sources,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     var selectedSource = sources.first;
     final deductionController = TextEditingController(
       text: formatInputAmount(overBy.clamp(0, selectedSource.remaining)),
@@ -189,7 +197,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          title: const Text('Kategorie-Limit uberschritten'),
+          title: Text(l10n.overspendCategoryLimitTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -197,15 +205,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${target.budget.name} wurde um ${formatEuroSmart(overBy)} uberschritten.',
+                    l10n.categoryExceededByMessage(
+                      target.budget.name,
+                      formatEuroSmart(overBy),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Mochtest du diesen Betrag von einer anderen Kategorie abziehen?',
-                  ),
+                  child: Text(l10n.overspendTransferQuestion),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
@@ -232,8 +241,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       );
                     });
                   },
-                  decoration: const InputDecoration(
-                    labelText: 'Wert abziehen von',
+                  decoration: InputDecoration(
+                    labelText: l10n.deductValueFromLabel,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -242,7 +251,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(labelText: 'Abzugsbetrag'),
+                  decoration: InputDecoration(
+                    labelText: l10n.deductionAmountLabel,
+                  ),
                 ),
               ],
             ),
@@ -250,13 +261,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(null),
-              child: const Text('Abbrechen'),
+              child: Text(l10n.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(
                 context,
               ).pop(const _OverspendDecision.skipDeduction()),
-              child: const Text('Ohne Abzug fortfahren'),
+              child: Text(l10n.continueWithoutDeduction),
             ),
             ElevatedButton(
               onPressed: () {
@@ -267,9 +278,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     amount <= 0 ||
                     amount > selectedSource.remaining) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Bitte einen gultigen Betrag eingeben.'),
-                    ),
+                    SnackBar(content: Text(l10n.invalidAmountMessage)),
                   );
                   return;
                 }
@@ -280,7 +289,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ),
                 );
               },
-              child: const Text('Betrag abziehen'),
+              child: Text(l10n.deductAmountAction),
             ),
           ],
         ),
@@ -290,6 +299,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final categories = ref.watch(knownCategoriesProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -300,8 +310,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Transaktion hinzufügen',
+        title: Text(
+          l10n.addTransaction,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
@@ -328,7 +338,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Neue Transaktion',
+                          l10n.newTransactionTitle,
                           style: TextStyle(
                             color: colorScheme.onPrimary,
                             fontSize: 16,
@@ -336,7 +346,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           ),
                         ),
                         Text(
-                          'Erfasse Einnahmen oder Ausgaben',
+                          l10n.captureIncomeExpenseSubtitle,
                           style: TextStyle(
                             color: colorScheme.onPrimary.withValues(alpha: 0.9),
                             fontSize: 12,
@@ -364,7 +374,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     TextFormField(
                       controller: _titleController,
                       decoration: InputDecoration(
-                        labelText: 'Titel',
+                        labelText: l10n.titleLabel,
                         prefixIcon: Icon(
                           Icons.title_rounded,
                           color: colorScheme.primary,
@@ -390,14 +400,14 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                       ),
                       validator: (value) =>
-                          value!.isEmpty ? 'Titel eingeben' : null,
+                          value!.isEmpty ? l10n.enterTitleValidation : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Betrag',
+                        labelText: l10n.paidAmountLabel,
                         prefixIcon: Icon(
                           Icons.euro_rounded,
                           color: colorScheme.primary,
@@ -423,7 +433,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         ),
                       ),
                       validator: (value) =>
-                          value!.isEmpty ? 'Betrag eingeben' : null,
+                          value!.isEmpty ? l10n.enterAmountValidation : null,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<TransactionType>(
@@ -434,8 +444,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                               value: t,
                               child: Text(
                                 t == TransactionType.income
-                                    ? 'Einnahme'
-                                    : 'Ausgabe',
+                                    ? l10n.tabIncome
+                                    : l10n.tabExpenses,
                               ),
                             ),
                           )
@@ -445,13 +455,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           setState(() {
                             _type = val;
                             if (_type == TransactionType.income) {
-                              _incomeCategory = 'Gehalt';
+                              _incomeCategory = _salaryIncomeKey;
                             }
                           });
                         }
                       },
                       decoration: InputDecoration(
-                        labelText: 'Typ',
+                        labelText: l10n.typeLabel,
                         prefixIcon: Icon(
                           Icons.swap_vert_rounded,
                           color: colorScheme.primary,
@@ -494,7 +504,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           if (val != null) setState(() => _category = val);
                         },
                         decoration: InputDecoration(
-                          labelText: 'Kategorie',
+                          labelText: l10n.categoryLabel,
                           prefixIcon: Icon(
                             Icons.category_rounded,
                             color: colorScheme.primary,
@@ -523,14 +533,14 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     else
                       DropdownButtonFormField<String>(
                         initialValue: _incomeCategory,
-                        items: const [
+                        items: [
                           DropdownMenuItem(
-                            value: 'Gehalt',
-                            child: Text('Gehalt'),
+                            value: _salaryIncomeKey,
+                            child: Text(l10n.salaryLabel),
                           ),
                           DropdownMenuItem(
-                            value: 'Andere Einnahme',
-                            child: Text('Andere Einnahme'),
+                            value: _otherIncomeKey,
+                            child: Text(l10n.otherIncomeLabel),
                           ),
                         ],
                         onChanged: (val) {
@@ -539,7 +549,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           }
                         },
                         decoration: InputDecoration(
-                          labelText: 'Einnahme-Typ',
+                          labelText: l10n.incomeTypeLabel,
                           prefixIcon: Icon(
                             Icons.payments_rounded,
                             color: colorScheme.primary,
@@ -568,7 +578,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     const SizedBox(height: 12),
                     InputDecorator(
                       decoration: InputDecoration(
-                        labelText: 'Datum',
+                        labelText: l10n.dateLabel,
                         prefixIcon: Icon(
                           Icons.calendar_today_rounded,
                           color: colorScheme.primary,
@@ -614,7 +624,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                                 setState(() => _selectedDate = picked);
                               }
                             },
-                            child: const Text('Wählen'),
+                            child: Text(l10n.chooseAction),
                           ),
                         ],
                       ),
@@ -625,7 +635,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                       child: FilledButton.icon(
                         onPressed: () => _submitTransaction(selectedCategory),
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Transaktion hinzufügen'),
+                        label: Text(l10n.addTransaction),
                       ),
                     ),
                   ],

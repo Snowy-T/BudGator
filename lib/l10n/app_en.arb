@@ -1,0 +1,341 @@
+{
+  "@@locale": "en",
+  "appTitle": "BudGator",
+  "settings": "Settings",
+  "language": "Language",
+  "languageSystem": "System language",
+  "languageGerman": "German",
+  "languageEnglish": "English",
+  "languageItalian": "Italian",
+  "languageSpanish": "Spanish",
+  "homeLabel": "Home",
+  "googlePayEnableTitle": "Enable Google Pay detection",
+  "googlePayEnableBody": "To suggest payments automatically, Budgator needs access to notifications.",
+  "laterAction": "Later",
+  "openSettingsAction": "Open settings",
+  "closeAction": "Close",
+  "copyAction": "Copy",
+  "copiedCsvClipboard": "CSV copied to clipboard.",
+  "csvImportHint": "Paste CSV here (including header: id,title,amount,date,category,type)",
+  "importAction": "Import",
+  "transactionsImportedCount": "{count} transactions imported.",
+  "@transactionsImportedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailedGeneric": "Import failed",
+  "resetAppDataConfirmBody": "All transactions, budgets, and savings goals will be reset to 0. Dark mode remains unchanged.",
+  "resetAction": "Reset",
+  "appDataResetDone": "App data has been reset.",
+  "paymentSavedTransaction": "Payment saved as transaction.",
+  "googlePayDetectedTitle": "Google Pay payment detected",
+  "paidAmountLabel": "Paid amount",
+  "paidAmountHint": "e.g. 7.50",
+  "titleLabel": "Title",
+  "categoryLabel": "Category",
+  "ignoreAction": "Ignore",
+  "invalidAmountMessage": "Please enter a valid amount.",
+  "googlePayPaymentDefaultTitle": "Google Pay payment",
+  "transactionDeleteTitle": "Delete transaction",
+  "transactionDeleteConfirm": "Do you really want to delete this transaction?",
+  "editTransactionTitle": "Edit transaction",
+  "typeLabel": "Type",
+  "dateLabel": "Date",
+  "chooseAction": "Choose",
+  "invalidValuesMessage": "Please enter valid values.",
+  "saveAnywayAction": "Save anyway",
+  "overspendCategoryLimitTitle": "Category limit exceeded",
+  "overspendNoSourceMessage": "{category} exceeded by {amount}. No other category has remaining budget to deduct. Save anyway?",
+  "@overspendNoSourceMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "categoryExceededByMessage": "{category} exceeded by {amount}.",
+  "@categoryExceededByMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "deductionSaveFailed": "Deduction from category could not be saved.",
+  "overspendTotalBudgetTitle": "Total budget exceeded",
+  "overspendTotalBudgetMessage": "This expense exceeds monthly total budget by {amount}. Save anyway?",
+  "@overspendTotalBudgetMessage": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "overspendTransferQuestion": "Do you want to deduct this amount from another category?",
+  "deductValueFromLabel": "Deduct value from",
+  "deductionAmountLabel": "Deduction amount",
+  "continueWithoutDeduction": "Continue without deduction",
+  "deductAmountAction": "Deduct amount",
+  "newTransactionTitle": "New transaction",
+  "captureIncomeExpenseSubtitle": "Capture income or expenses",
+  "enterTitleValidation": "Enter a title",
+  "enterAmountValidation": "Enter amount",
+  "incomeTypeLabel": "Income type",
+  "salaryLabel": "Salary",
+  "otherIncomeLabel": "Other income",
+  "createCategoryAction": "Add category",
+  "editTotalBudgetAction": "Change total budget",
+  "categoriesTitle": "Categories",
+  "activeCount": "{count} active",
+  "@activeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBudgetCategories": "No categories with budget",
+  "monthlyTotalBudgetChangeTitle": "Change monthly total budget",
+  "totalBudgetLabel": "Total budget",
+  "warningTitle": "Warning",
+  "budgetTooLowWarningMessage": "The new budget ({newBudget}) is lower than already allocated categories ({allocated}). Please adjust categories.",
+  "@budgetTooLowWarningMessage": {
+    "placeholders": {
+      "newBudget": {},
+      "allocated": {}
+    }
+  },
+  "totalBudgetUpdated": "Total budget updated",
+  "newCategoryTitle": "New category",
+  "categoryNameLabel": "Category name",
+  "budgetAllocationLabel": "Budget allocation",
+  "colorLabel": "Color",
+  "iconLabel": "Icon",
+  "addAction": "Add",
+  "categoryNameRequired": "Category name is required",
+  "budgetMustBePositive": "Budget must be > 0",
+  "budgetWouldBeExceededAvailable": "Budget would be exceeded. Available: {amount}",
+  "@budgetWouldBeExceededAvailable": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryAlreadyExists": "Category already exists",
+  "categoryAdded": "Category added",
+  "editCategoryTitle": "Edit {name}",
+  "@editCategoryTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "categoryDeleted": "Category deleted",
+  "invalidAmountGeneric": "Invalid amount",
+  "budgetWouldBeExceededMax": "Budget would be exceeded. Max: {amount}",
+  "@budgetWouldBeExceededMax": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryUpdated": "Category updated",
+  "setupBudgetTitle": "Setup budget",
+  "setupBudgetDescription": "To manage expenses, first create a monthly total budget. You can then create categories and distribute the amount.",
+  "createMonthlyBudgetAction": "Create monthly budget",
+  "monthlyBudgetTitle": "Monthly budget",
+  "totalBudgetCurrentMonthLabel": "Total budget for this month",
+  "createAction": "Create",
+  "invalidPositiveAmountMessage": "Please enter a valid amount (> 0)",
+  "monthlyBudgetLabel": "Monthly budget",
+  "spentLabel": "Spent",
+  "allocatedLabel": "Allocated: {amount}",
+  "@allocatedLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "availableLabel": "Available: {amount}",
+  "@availableLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "noBudgetSet": "No budget set",
+  "overrunByLabel": "Exceeded by {amount}",
+  "@overrunByLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "createSavingsGoalTitle": "Create savings goal",
+  "editSavingsGoalTitle": "Edit savings goal",
+  "goalNameLabel": "Name",
+  "goalAmountLabel": "Target amount",
+  "alreadySavedLabel": "Already saved",
+  "monthlyDeductionFormLabel": "Monthly deduction",
+  "debitDayLabel": "Debit day",
+  "dayOfMonthLabel": "{day}. of month",
+  "@dayOfMonthLabel": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "automationActive": "Automation active",
+  "automaticMonthlyDeductionSubtitle": "Book monthly deduction automatically",
+  "savingsGoalDeleted": "Savings goal deleted",
+  "enterValidValuesMessage": "Please enter valid values.",
+  "savedCannotExceedTarget": "Already saved amount cannot exceed target.",
+  "savingsGoalCreated": "Savings goal created",
+  "savingsGoalUpdated": "Savings goal updated",
+  "depositIntoGoalTitle": "Deposit to {name}",
+  "@depositIntoGoalTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "depositAction": "Deposit",
+  "goalAlreadyReached": "Goal is already fully reached.",
+  "depositedAmountMessage": "{amount} deposited",
+  "@depositedAmountMessage": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "newSavingsGoalAction": "New savings goal",
+  "noSavingsGoalsHint": "No savings goals yet. Create a goal with monthly deduction.",
+  "monthlyDeductionValue": "Monthly deduction: {amount}",
+  "@monthlyDeductionValue": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "debitDayValue": "Debit: {day}. of month",
+  "@debitDayValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "depositShortAction": "Deposit",
+  "editShortAction": "Edit",
+  "noTransactionsRecent": "No transactions",
+  "recentTransactionsTitle": "Recent transactions",
+  "allAction": "All",
+  "noExpensesLast30Days": "No expenses in the last 30 days",
+  "noCategoriesLabel": "No categories",
+  "topCategoriesTitle": "Top categories",
+  "expensesLabel": "Expenses",
+  "monthlyBudgetRemainingLabel": "Monthly budget remaining",
+  "expensesTrendTitle": "Expense trend",
+  "todayLabel": "Today",
+  "weekLabel": "Week",
+  "monthLabel": "Month",
+  "savingsGoalsTitle": "Savings goals",
+  "noActiveSavingsGoal": "No active savings goal yet.",
+  "createSavingsGoalAction": "Create savings goal",
+  "savingsGoalHeader": "Savings goal: {name}",
+  "@savingsGoalHeader": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "goalNameInputLabel": "Goal name",
+  "targetAmountInputLabel": "Target amount",
+  "currentOfTarget": "{current} of {target}",
+  "@currentOfTarget": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "availableBalance": "Available balance",
+  "okAction": "OK",
+  "savingsGoalEditTitle": "Edit savings goal",
+  "savingsGoalNameLabel": "Goal name",
+  "savingsGoalTargetLabel": "Goal amount",
+  "goalDepositTransactionTitle": "{name} deposit",
+  "@goalDepositTransactionTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "darkMode": "Dark mode",
+  "followsDeviceSetting": "Follows device setting",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "csvExport": "CSV Export",
+  "csvImport": "CSV Import",
+  "copyTransactionsAsCsv": "Copy transactions as CSV",
+  "importTransactionsFromCsv": "Import transactions from CSV",
+  "resetAppData": "Reset app data",
+  "resetBudgetsGoalsTransactions": "Resets budgets, goals, and transactions to 0",
+  "budgetAndGoals": "Budget & Savings Goals",
+  "budgetsTab": "Budgets",
+  "savingsGoalsTab": "Savings Goals",
+  "statsTitle": "Statistics",
+  "statsBookingsInRange": "{count} entries in range",
+  "@statsBookingsInRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreMetrics": "Core metrics",
+  "weeklyTrend": "Weekly trend",
+  "categoryBreakdown": "Category split",
+  "weekdayPattern": "Weekday pattern",
+  "statsEmptyTitle": "No data for statistics yet",
+  "statsEmptySubtitle": "As soon as you add transactions, you will see trends, categories and savings rate here.",
+  "statsPositiveTrend": "You are saving in the trend",
+  "statsNegativeTrend": "Expenses are currently too high",
+  "netInRangeLabel": "Net in {range} (income - expenses)",
+  "@netInRangeLabel": {
+    "placeholders": {
+      "range": {}
+    }
+  },
+  "incomeLabel": "Income",
+  "expensesPerDayLabel": "Expenses / day",
+  "largestExpenseLabel": "Largest expense",
+  "activeDaysLabel": "Active days",
+  "savingsRateLabel": "Savings rate",
+  "noExpenseStreakLabel": "no-spend: {days} days",
+  "@noExpenseStreakLabel": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noExpensesInRange": "No expenses in the selected range.",
+  "weeklyAverageLabel": "Average week",
+  "trendLabel": "Trend",
+  "weeklyBarsHint": "Each bar = one week. This helps you see outliers and trend shifts immediately.",
+  "noCategoryExpenses": "No categories with expenses yet.",
+  "noWeekdayExpenses": "No expenses by weekday yet.",
+  "highestExpenseDayHint": "Rank 1 = highest spending day. The color intensity shows the difference at a glance.",
+  "weekLabelPrefix": "Week {week}",
+  "@weekLabelPrefix": {
+    "placeholders": {
+      "week": {}
+    }
+  },
+  "categoryGeneral": "General",
+  "categoryEntertainment": "Entertainment",
+  "categoryCafe": "Cafe",
+  "range7Days": "7 days",
+  "range30Days": "30 days",
+  "range90Days": "90 days",
+  "rangeAll": "Overall",
+  "transactionsTitle": "Transactions",
+  "tabAll": "All",
+  "tabIncome": "Income",
+  "tabExpenses": "Expenses",
+  "noTransactions": "No transactions",
+  "edit": "Edit",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "save": "Save",
+  "addTransaction": "Add transaction"
+}

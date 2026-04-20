@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 class GooglePayNotificationEvent {
   final String packageName;
@@ -128,7 +129,14 @@ class GooglePayNotificationService {
     'budgator/google_pay_notifications/events',
   );
 
+  bool get isSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   Stream<GooglePayNotificationEvent> get events {
+    if (!isSupported) {
+      return const Stream<GooglePayNotificationEvent>.empty();
+    }
+
     return _eventChannel
         .receiveBroadcastStream()
         .where((raw) => raw is Map)
@@ -136,25 +144,74 @@ class GooglePayNotificationService {
   }
 
   Future<bool> isNotificationAccessGranted() async {
-    final granted = await _methodChannel.invokeMethod<bool>(
-      'isNotificationAccessGranted',
-    );
-    return granted ?? false;
+    if (!isSupported) return false;
+
+    try {
+      final granted = await _methodChannel.invokeMethod<bool>(
+        'isNotificationAccessGranted',
+      );
+      return granted ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<void> openNotificationAccessSettings() {
-    return _methodChannel.invokeMethod('openNotificationAccessSettings');
+    if (!isSupported) return Future.value();
+    return _methodChannel
+        .invokeMethod('openNotificationAccessSettings')
+        .catchError((_) {});
+  }
+
+  Future<bool> isPostNotificationsGranted() async {
+    if (!isSupported) return false;
+
+    try {
+      final granted = await _methodChannel.invokeMethod<bool>(
+        'isPostNotificationsGranted',
+      );
+      return granted ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<bool> requestPostNotificationsPermission() async {
+    if (!isSupported) return false;
+
+    try {
+      final granted = await _methodChannel.invokeMethod<bool>(
+        'requestPostNotificationsPermission',
+      );
+      return granted ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<List<GooglePayNotificationEvent>> fetchAndClearPendingEvents() async {
-    final raw = await _methodChannel.invokeMethod<List<dynamic>>(
-      'fetchAndClearPendingEvents',
-    );
-    if (raw == null || raw.isEmpty) return const [];
+    if (!isSupported) return const [];
 
-    return raw
-        .whereType<Map>()
-        .map((item) => GooglePayNotificationEvent.fromMap(item))
-        .toList();
+    try {
+      final raw = await _methodChannel.invokeMethod<List<dynamic>>(
+        'fetchAndClearPendingEvents',
+      );
+      if (raw == null || raw.isEmpty) return const [];
+
+      return raw
+          .whereType<Map>()
+          .map((item) => GooglePayNotificationEvent.fromMap(item))
+          .toList();
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException {
+      return const [];
+    }
   }
 }

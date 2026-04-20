@@ -37,6 +37,7 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
       date: t.date,
       category: t.category,
       type: t.type,
+      referenceId: t.referenceId,
     );
     _nextId++;
     state = [newTransaction, ...state];
@@ -67,6 +68,7 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
             date: tx.date,
             category: tx.category,
             type: tx.type,
+            referenceId: tx.referenceId,
           ),
         )
         .toList();
@@ -98,6 +100,7 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
             date: tx.date,
             category: replacement,
             type: tx.type,
+            referenceId: tx.referenceId,
           ),
         );
       } else {

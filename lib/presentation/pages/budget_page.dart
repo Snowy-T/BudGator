@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:budgator/l10n/app_localizations.dart';
 import '../../data/models/transaction_model.dart';
 import '../../core/services/money_formatter.dart';
 import '../theme/category_colors.dart';
 
 import '../controllers/category_budget_provider.dart';
+import '../controllers/savings_contribution_sync.dart';
 import '../controllers/savings_goal_provider.dart';
 import '../controllers/transaction_provider.dart';
 
@@ -19,72 +21,12 @@ class _BudgetPageState extends ConsumerState<BudgetPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  String _monthKey(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    return '${date.year}-$month';
-  }
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final now = DateTime.now();
-      final applied = ref
-          .read(savingsGoalProvider.notifier)
-          .applyMonthlyContributionIfDue();
-
-      bool hasMonthlyTx(String goalName, List<TransactionModel> txs) {
-        return txs.any(
-          (tx) =>
-              tx.type == TransactionType.expense &&
-              tx.category == 'Sparziel' &&
-              tx.date.year == now.year &&
-              tx.date.month == now.month &&
-              tx.title == '$goalName-Monatsbeitrag',
-        );
-      }
-
-      for (final item in applied) {
-        final txs = ref.read(transactionsProvider);
-        if (hasMonthlyTx(item.goalName, txs)) continue;
-
-        ref
-            .read(transactionsProvider.notifier)
-            .add(
-              TransactionModel(
-                title: '${item.goalName}-Monatsbeitrag',
-                amount: item.amount,
-                date: now,
-                category: 'Sparziel',
-                type: TransactionType.expense,
-              ),
-            );
-      }
-
-      final goals = ref.read(savingsGoalProvider);
-      for (final goal in goals) {
-        if (!goal.isActive ||
-            goal.monthlyContribution <= 0 ||
-            goal.lastAutoContributionMonth != _monthKey(now)) {
-          continue;
-        }
-
-        final txs = ref.read(transactionsProvider);
-        if (hasMonthlyTx(goal.name, txs)) continue;
-
-        ref
-            .read(transactionsProvider.notifier)
-            .add(
-              TransactionModel(
-                title: '${goal.name}-Monatsbeitrag',
-                amount: goal.monthlyContribution,
-                date: now,
-                category: 'Sparziel',
-                type: TransactionType.expense,
-              ),
-            );
-      }
+      applyDueSavingsContributions(ref);
     });
   }
 
@@ -96,14 +38,15 @@ class _BudgetPageState extends ConsumerState<BudgetPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budget & Sparziele'),
+        title: Text(l10n.budgetAndGoals),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Budgets'),
-            Tab(text: 'Sparziele'),
+          tabs: [
+            Tab(text: l10n.budgetsTab),
+            Tab(text: l10n.savingsGoalsTab),
           ],
         ),
       ),
@@ -125,6 +68,7 @@ class _BudgetTab extends ConsumerStatefulWidget {
 class _BudgetTabState extends ConsumerState<_BudgetTab> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final monthlyBudget = ref.watch(monthlyTotalBudgetProvider);
     final categories = ref.watch(categoryBudgetProvider);
     final transactions = ref.watch(transactionsProvider);
@@ -180,8 +124,8 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Kategorien',
+                    Text(
+                      l10n.categoriesTitle,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -199,7 +143,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        '${categories.length} aktiv',
+                        l10n.activeCount(categories.length),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
@@ -222,7 +166,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                           border: Border.all(color: colorScheme.outlineVariant),
                         ),
                         child: Text(
-                          'Keine Kategorien mit Budget vorhanden',
+                          l10n.noBudgetCategories,
                           textAlign: TextAlign.center,
                           style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
@@ -281,13 +225,13 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 monthlyBudget,
               ),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Kategorie hinzufüggen'),
+              label: Text(l10n.createCategoryAction),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => _openSetTotalBudgetDialog(context, ref),
               icon: const Icon(Icons.edit_rounded),
-              label: const Text('Gesamtbudget ändern'),
+              label: Text(l10n.editTotalBudgetAction),
             ),
           ],
         ),
@@ -299,6 +243,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final current = ref.read(monthlyTotalBudgetProvider);
     final controller = TextEditingController(
       text: current > 0 ? formatInputAmount(current) : '',
@@ -307,15 +252,14 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Monatliches Gesamtbudget ändern'),
+        title: Text(l10n.monthlyTotalBudgetChangeTitle),
         content: SizedBox(
           width: double.maxFinite,
           child: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'Gesamtbudget',
-              hintText: 'z.B. 1800',
+              labelText: l10n.totalBudgetLabel,
               prefixIcon: const Icon(Icons.wallet_rounded),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -327,11 +271,11 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -342,9 +286,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     final parsed = _parseMoney(controller.text);
     if (parsed == null || parsed <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bitte einen gültigen Betrag (> 0) eingeben.'),
-        ),
+        SnackBar(content: Text(l10n.invalidPositiveAmountMessage)),
       );
       return;
     }
@@ -360,14 +302,17 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Warnung'),
+          title: Text(l10n.warningTitle),
           content: Text(
-            'Das neue Budget (${formatEuroSmart(parsed)}) ist kleiner als die bereits verteilten Kategorien (${formatEuroSmart(totalAllocated)}).\n\nBitte passen Sie die Kategorien an.',
+            l10n.budgetTooLowWarningMessage(
+              formatEuroSmart(parsed),
+              formatEuroSmart(totalAllocated),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('OK'),
+              child: Text(l10n.okAction),
             ),
           ],
         ),
@@ -382,7 +327,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Gesamtbudget aktualisiert')));
+    ).showSnackBar(SnackBar(content: Text(l10n.totalBudgetUpdated)));
   }
 
   Future<void> _openAddCategoryDialog(
@@ -391,6 +336,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     List<CategoryBudget> categories,
     double monthlyBudget,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
     final allocController = TextEditingController();
     var selectedColor = selectableCategoryColors.first;
@@ -399,7 +345,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Neue Kategorie'),
+        title: Text(l10n.newCategoryTitle),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -409,8 +355,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    labelText: 'Kategoriename',
-                    hintText: 'z.B. Lebensmittel',
+                    labelText: l10n.categoryNameLabel,
                     prefixIcon: const Icon(Icons.category_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -425,8 +370,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                     decimal: true,
                   ),
                   decoration: InputDecoration(
-                    labelText: 'Budget-Zuweisung',
-                    hintText: 'z.B. 300',
+                    labelText: l10n.budgetAllocationLabel,
                     prefixIcon: const Icon(Icons.euro_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -438,7 +382,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Farbe',
+                    l10n.colorLabel,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
@@ -458,7 +402,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Icon',
+                    l10n.iconLabel,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
@@ -481,11 +425,11 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hinzufüggen'),
+            child: Text(l10n.addAction),
           ),
         ],
       ),
@@ -497,16 +441,16 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     final allocAmount = _parseMoney(allocController.text);
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kategoriename ist erforderlich')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.categoryNameRequired)));
       return;
     }
 
     if (allocAmount == null || allocAmount <= 0) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Budget muss > 0 sein')));
+      ).showSnackBar(SnackBar(content: Text(l10n.budgetMustBePositive)));
       return;
     }
 
@@ -518,7 +462,9 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Budget würde überschritten. Verfügbar: ${formatEuroSmart(monthlyBudget - totalAllocated)}',
+            l10n.budgetWouldBeExceededAvailable(
+              formatEuroSmart(monthlyBudget - totalAllocated),
+            ),
           ),
         ),
       );
@@ -535,16 +481,16 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         );
 
     if (!added) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kategorie existiert bereits')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.categoryAlreadyExists)));
       return;
     }
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Kategorie hinzugefügt')));
+    ).showSnackBar(SnackBar(content: Text(l10n.categoryAdded)));
     setState(() {});
   }
 
@@ -555,6 +501,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     List<CategoryBudget> categories,
     double monthlyBudget,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(
       text: formatInputAmount(category.monthlyLimit),
     );
@@ -567,7 +514,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
     final action = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${category.name} bearbeiten'),
+        title: Text(l10n.editCategoryTitle(category.name)),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
@@ -579,7 +526,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
                   decimal: true,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Budget-Zuweisung',
+                  labelText: l10n.budgetAllocationLabel,
                   prefixIcon: const Icon(Icons.euro_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -591,7 +538,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Farbe',
+                  l10n.colorLabel,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -611,7 +558,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Icon',
+                  l10n.iconLabel,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -633,18 +580,18 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop('cancel'),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop('delete'),
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Löschen'),
+            child: Text(l10n.delete),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop('save'),
-            child: const Text('Speichern'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -656,7 +603,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       ref.read(categoryBudgetProvider.notifier).deleteCategory(category.id);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Kategorie gelöscht')));
+      ).showSnackBar(SnackBar(content: Text(l10n.categoryDeleted)));
       setState(() {});
       return;
     }
@@ -666,7 +613,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
       if (newAmount == null || newAmount < 0) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Ungültiger Betrag')));
+        ).showSnackBar(SnackBar(content: Text(l10n.invalidAmountGeneric)));
         return;
       }
 
@@ -678,7 +625,9 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Budget würde überschritten. Max: ${formatEuroSmart(monthlyBudget - otherAllocated)}',
+              l10n.budgetWouldBeExceededMax(
+                formatEuroSmart(monthlyBudget - otherAllocated),
+              ),
             ),
           ),
         );
@@ -697,7 +646,7 @@ class _BudgetTabState extends ConsumerState<_BudgetTab> {
           );
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Kategorie aktualisiert')));
+      ).showSnackBar(SnackBar(content: Text(l10n.categoryUpdated)));
       setState(() {});
     }
   }
@@ -710,6 +659,7 @@ class _SetupBudgetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -723,14 +673,14 @@ class _SetupBudgetScreen extends ConsumerWidget {
               color: colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Budget einrichten',
+            Text(
+              l10n.setupBudgetTitle,
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Um Ausgaben zu verwalten, richten Sie zunächst ein monatliches Gesamtbudget ein. Sie können dann Kategorien erstellen und den Betrag zwischen ihnen verteilen.',
+              l10n.setupBudgetDescription,
               textAlign: TextAlign.center,
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
@@ -738,7 +688,7 @@ class _SetupBudgetScreen extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => _showSetupDialog(context, ref),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Monatsbudget erstellen'),
+              label: Text(l10n.createMonthlyBudgetAction),
             ),
           ],
         ),
@@ -747,29 +697,29 @@ class _SetupBudgetScreen extends ConsumerWidget {
   }
 
   Future<void> _showSetupDialog(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Monatsbudget'),
+        title: Text(l10n.monthlyBudgetTitle),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Gesamtbudget für diesen Monat',
-            hintText: 'z.B. 1800',
+          decoration: InputDecoration(
+            labelText: l10n.totalBudgetCurrentMonthLabel,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Erstellen'),
+            child: Text(l10n.createAction),
           ),
         ],
       ),
@@ -780,9 +730,7 @@ class _SetupBudgetScreen extends ConsumerWidget {
     final amount = _parseMoney(controller.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bitte einen gütigen Betrag (> 0) eingeben'),
-        ),
+        SnackBar(content: Text(l10n.invalidPositiveAmountMessage)),
       );
       return;
     }
@@ -809,6 +757,7 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = totalAllocated > 0
@@ -854,8 +803,8 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Monatsbudget',
+                    Text(
+                      l10n.monthlyBudgetLabel,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -874,7 +823,7 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Ausgegeben', style: TextStyle(fontSize: 12)),
+                  Text(l10n.spentLabel, style: const TextStyle(fontSize: 12)),
                   Text(
                     formatEuroSmart(totalSpent),
                     style: TextStyle(
@@ -904,11 +853,11 @@ class _MonthlyBudgetOverviewCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Verteilt: ${formatEuroSmart(totalAllocated)}',
+                l10n.allocatedLabel(formatEuroSmart(totalAllocated)),
                 style: const TextStyle(fontSize: 12),
               ),
               Text(
-                'Verfügbar: ${formatEuroSmart(availableToAllocate)}',
+                l10n.availableLabel(formatEuroSmart(availableToAllocate)),
                 style: TextStyle(
                   fontSize: 12,
                   color: availableToAllocate < 0 ? Colors.red : Colors.green,
@@ -946,6 +895,7 @@ class _CategoryAllocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final progress = allocated > 0 ? (spent / allocated).clamp(0.0, 1.0) : 0.0;
     final remaining = allocated - spent;
@@ -1019,7 +969,7 @@ class _CategoryAllocationCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  'Kein Budget gesetzt',
+                  l10n.noBudgetSet,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.blue.shade700,
@@ -1031,7 +981,7 @@ class _CategoryAllocationCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  'Überschritten um ${formatEuroSmart(-remaining)}',
+                  l10n.overrunByLabel(formatEuroSmart(-remaining)),
                   style: const TextStyle(
                     fontSize: 11,
                     color: Colors.red,
@@ -1051,6 +1001,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final goals = ref.watch(savingsGoalProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1079,7 +1030,9 @@ class _SavingsGoalsTab extends ConsumerWidget {
             builder: (context, setLocalState) {
               return AlertDialog(
                 title: Text(
-                  goal == null ? 'Sparziel erstellen' : 'Sparziel bearbeiten',
+                  goal == null
+                      ? l10n.createSavingsGoalTitle
+                      : l10n.editSavingsGoalTitle,
                 ),
                 content: SizedBox(
                   width: double.maxFinite,
@@ -1089,9 +1042,8 @@ class _SavingsGoalsTab extends ConsumerWidget {
                       children: [
                         TextField(
                           controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            hintText: 'z.B. Notgroschen',
+                          decoration: InputDecoration(
+                            labelText: l10n.goalNameLabel,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -1100,9 +1052,8 @@ class _SavingsGoalsTab extends ConsumerWidget {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Zielbetrag',
-                            hintText: 'z.B. 5000',
+                          decoration: InputDecoration(
+                            labelText: l10n.goalAmountLabel,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -1111,9 +1062,8 @@ class _SavingsGoalsTab extends ConsumerWidget {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Bereits gespart',
-                            hintText: 'z.B. 600',
+                          decoration: InputDecoration(
+                            labelText: l10n.alreadySavedLabel,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -1122,22 +1072,21 @@ class _SavingsGoalsTab extends ConsumerWidget {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Monatlicher Abzug',
-                            hintText: 'z.B. 150',
+                          decoration: InputDecoration(
+                            labelText: l10n.monthlyDeductionFormLabel,
                           ),
                         ),
                         const SizedBox(height: 10),
                         DropdownButtonFormField<int>(
                           initialValue: contributionDay,
-                          decoration: const InputDecoration(
-                            labelText: 'Abbuchungstag',
+                          decoration: InputDecoration(
+                            labelText: l10n.debitDayLabel,
                           ),
                           items: monthlyContributionDayOptions
                               .map(
                                 (day) => DropdownMenuItem<int>(
                                   value: day,
-                                  child: Text('$day. des Monats'),
+                                  child: Text(l10n.dayOfMonthLabel(day)),
                                 ),
                               )
                               .toList(),
@@ -1152,16 +1101,16 @@ class _SavingsGoalsTab extends ConsumerWidget {
                           value: isActive,
                           onChanged: (value) =>
                               setLocalState(() => isActive = value),
-                          title: const Text('Automatik aktiv'),
-                          subtitle: const Text(
-                            'Monatlichen Abzug automatisch verbuchen',
+                          title: Text(l10n.automationActive),
+                          subtitle: Text(
+                            l10n.automaticMonthlyDeductionSubtitle,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Farbe',
+                            l10n.colorLabel,
                             style: TextStyle(
                               color: Theme.of(
                                 context,
@@ -1188,15 +1137,15 @@ class _SavingsGoalsTab extends ConsumerWidget {
                       style: TextButton.styleFrom(
                         foregroundColor: colorScheme.error,
                       ),
-                      child: const Text('Löschen'),
+                      child: Text(l10n.delete),
                     ),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop('cancel'),
-                    child: const Text('Abbrechen'),
+                    child: Text(l10n.cancel),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop('save'),
-                    child: const Text('Speichern'),
+                    child: Text(l10n.save),
                   ),
                 ],
               );
@@ -1211,7 +1160,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
         ref.read(savingsGoalProvider.notifier).deleteGoal(goal.id);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Sparziel gelöscht')));
+        ).showSnackBar(SnackBar(content: Text(l10n.savingsGoalDeleted)));
         return;
       }
 
@@ -1225,18 +1174,16 @@ class _SavingsGoalsTab extends ConsumerWidget {
           target <= 0 ||
           current < 0 ||
           monthly < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bitte valide Werte eingeben.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.enterValidValuesMessage)));
         return;
       }
 
       if (current > target) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bereits gespart darf Ziel nicht überschreiten.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.savedCannotExceedTarget)));
         return;
       }
 
@@ -1254,7 +1201,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
             );
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Sparziel erstellt')));
+        ).showSnackBar(SnackBar(content: Text(l10n.savingsGoalCreated)));
       } else {
         ref
             .read(savingsGoalProvider.notifier)
@@ -1270,7 +1217,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
             );
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Sparziel aktualisiert')));
+        ).showSnackBar(SnackBar(content: Text(l10n.savingsGoalUpdated)));
       }
     }
 
@@ -1279,23 +1226,20 @@ class _SavingsGoalsTab extends ConsumerWidget {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('In ${goal.name} einzahlen'),
+          title: Text(l10n.depositIntoGoalTitle(goal.name)),
           content: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Betrag',
-              hintText: 'z.B. 100',
-            ),
+            decoration: InputDecoration(labelText: l10n.paidAmountLabel),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Abbrechen'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Einzahlen'),
+              child: Text(l10n.depositAction),
             ),
           ],
         ),
@@ -1305,9 +1249,9 @@ class _SavingsGoalsTab extends ConsumerWidget {
 
       final amount = _parseMoney(controller.text);
       if (amount == null || amount <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bitte gültigen Betrag eingeben.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.invalidAmountMessage)));
         return;
       }
 
@@ -1315,9 +1259,9 @@ class _SavingsGoalsTab extends ConsumerWidget {
           .read(savingsGoalProvider.notifier)
           .addCurrentToGoal(goal.id, amount);
       if (applied <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ziel ist bereits voll erreicht.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.goalAlreadyReached)));
         return;
       }
 
@@ -1325,7 +1269,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
           .read(transactionsProvider.notifier)
           .add(
             TransactionModel(
-              title: '${goal.name}-Einzahlung',
+              title: l10n.goalDepositTransactionTitle(goal.name),
               amount: applied,
               date: DateTime.now(),
               category: 'Sparziel',
@@ -1334,7 +1278,9 @@ class _SavingsGoalsTab extends ConsumerWidget {
           );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${formatEuroSmart(applied)} eingezahlt')),
+        SnackBar(
+          content: Text(l10n.depositedAmountMessage(formatEuroSmart(applied))),
+        ),
       );
     }
 
@@ -1347,7 +1293,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => openGoalDialog(),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Neues Sparziel'),
+              label: Text(l10n.newSavingsGoalAction),
             ),
             const SizedBox(height: 14),
             if (goals.isEmpty)
@@ -1359,7 +1305,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
                   border: Border.all(color: colorScheme.outlineVariant),
                 ),
                 child: Text(
-                  'Noch keine Sparziele. Lege ein Ziel mit monatlichem Abzug an.',
+                  l10n.noSavingsGoalsHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
@@ -1437,7 +1383,10 @@ class _SavingsGoalsTab extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${formatEuroSmart(goal.current)} von ${formatEuroSmart(goal.target)}',
+                          l10n.currentOfTarget(
+                            formatEuroSmart(goal.current),
+                            formatEuroSmart(goal.target),
+                          ),
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -1445,12 +1394,14 @@ class _SavingsGoalsTab extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Monatlicher Abzug: ${formatEuroSmart(goal.monthlyContribution)}',
+                          l10n.monthlyDeductionValue(
+                            formatEuroSmart(goal.monthlyContribution),
+                          ),
                           style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Abbuchung: ${goal.contributionDay}. des Monats',
+                          l10n.debitDayValue(goal.contributionDay),
                           style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 10),
@@ -1460,7 +1411,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
                               child: OutlinedButton.icon(
                                 onPressed: () => addManualContribution(goal),
                                 icon: const Icon(Icons.add_card_rounded),
-                                label: const Text('Einzahlen'),
+                                label: Text(l10n.depositShortAction),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -1468,7 +1419,7 @@ class _SavingsGoalsTab extends ConsumerWidget {
                               child: TextButton.icon(
                                 onPressed: () => openGoalDialog(goal: goal),
                                 icon: const Icon(Icons.edit_rounded),
-                                label: const Text('Bearbeiten'),
+                                label: Text(l10n.editShortAction),
                               ),
                             ),
                           ],

@@ -19,6 +19,7 @@ class AppLocalStorage {
   static const _categoryBudgetsKey = 'category_budgets_v1';
   static const _monthlyTotalBudgetsKey = 'monthly_total_budgets_v1';
   static const _themeModeKey = 'theme_mode_v1';
+  static const _appLanguageKey = 'app_language_v1';
 
   AppLocalStorage(this._prefs);
 
@@ -150,5 +151,19 @@ class AppLocalStorage {
 
   Future<void> resetThemeMode() {
     return _prefs.remove(_themeModeKey);
+  }
+
+  String loadAppLanguage() {
+    final raw = _prefs.getString(_appLanguageKey);
+    if (raw == null || raw.isEmpty) return 'system';
+    return raw;
+  }
+
+  Future<void> saveAppLanguage(String language) {
+    return _prefs.setString(_appLanguageKey, language);
+  }
+
+  Future<void> resetAppLanguage() {
+    return _prefs.remove(_appLanguageKey);
   }
 }

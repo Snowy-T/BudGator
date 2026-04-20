@@ -1,3 +1,4 @@
+import 'package:budgator/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,6 +31,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final transactions = ref.watch(transactionsProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -37,8 +39,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Transaktionen',
+        title: Text(
+          l10n.transactionsTitle,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
@@ -68,10 +70,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
-                  tabs: const [
-                    Tab(text: 'Alle'),
-                    Tab(text: 'Einnahmen'),
-                    Tab(text: 'Ausgaben'),
+                  tabs: [
+                    Tab(text: l10n.tabAll),
+                    Tab(text: l10n.tabIncome),
+                    Tab(text: l10n.tabExpenses),
                   ],
                 ),
               ),
@@ -155,6 +157,7 @@ class _TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     if (transactions.isEmpty) {
       return Padding(
@@ -169,7 +172,7 @@ class _TransactionList extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Keine Transaktionen',
+            l10n.noTransactions,
             textAlign: TextAlign.center,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
@@ -250,6 +253,7 @@ class _TransactionTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isIncome = transaction.type == TransactionType.income;
     final color = isIncome ? Colors.green : Colors.red;
@@ -317,18 +321,16 @@ class _TransactionTile extends ConsumerWidget {
                     final shouldDelete = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Transaktion loschen'),
-                        content: const Text(
-                          'Mochtest du diese Transaktion wirklich loschen?',
-                        ),
+                        title: Text(l10n.transactionDeleteTitle),
+                        content: Text(l10n.transactionDeleteConfirm),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('Abbrechen'),
+                            child: Text(l10n.cancel),
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('Loschen'),
+                            child: Text(l10n.delete),
                           ),
                         ],
                       ),
@@ -341,9 +343,9 @@ class _TransactionTile extends ConsumerWidget {
                     }
                   }
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                  PopupMenuItem(value: 'delete', child: Text('Loschen')),
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                  PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
                 ],
               ),
             ],
@@ -354,6 +356,7 @@ class _TransactionTile extends ConsumerWidget {
   }
 
   Future<void> _openEditDialog(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final titleController = TextEditingController(text: transaction.title);
     final amountController = TextEditingController(
       text: formatInputAmount(transaction.amount),
@@ -368,7 +371,7 @@ class _TransactionTile extends ConsumerWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          title: const Text('Transaktion bearbeiten'),
+          title: Text(l10n.editTransactionTitle),
           content: SizedBox(
             width: double.maxFinite,
             child: SingleChildScrollView(
@@ -378,7 +381,7 @@ class _TransactionTile extends ConsumerWidget {
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: 'Titel',
+                      labelText: l10n.titleLabel,
                       prefixIcon: const Icon(Icons.title_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -393,7 +396,7 @@ class _TransactionTile extends ConsumerWidget {
                       decimal: true,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Betrag',
+                      labelText: l10n.paidAmountLabel,
                       prefixIcon: const Icon(Icons.euro_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -405,7 +408,7 @@ class _TransactionTile extends ConsumerWidget {
                   TextField(
                     controller: categoryController,
                     decoration: InputDecoration(
-                      labelText: 'Kategorie',
+                      labelText: l10n.categoryLabel,
                       prefixIcon: const Icon(Icons.category_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -416,14 +419,14 @@ class _TransactionTile extends ConsumerWidget {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<TransactionType>(
                     initialValue: selectedType,
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: TransactionType.income,
-                        child: Text('Einnahme'),
+                        child: Text(l10n.tabIncome),
                       ),
                       DropdownMenuItem(
                         value: TransactionType.expense,
-                        child: Text('Ausgabe'),
+                        child: Text(l10n.tabExpenses),
                       ),
                     ],
                     onChanged: (value) {
@@ -433,7 +436,7 @@ class _TransactionTile extends ConsumerWidget {
                       });
                     },
                     decoration: InputDecoration(
-                      labelText: 'Typ',
+                      labelText: l10n.typeLabel,
                       prefixIcon: const Icon(Icons.swap_vert_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -444,7 +447,7 @@ class _TransactionTile extends ConsumerWidget {
                   const SizedBox(height: 12),
                   InputDecorator(
                     decoration: InputDecoration(
-                      labelText: 'Datum',
+                      labelText: l10n.dateLabel,
                       prefixIcon: const Icon(Icons.calendar_today_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -481,7 +484,7 @@ class _TransactionTile extends ConsumerWidget {
                               );
                             });
                           },
-                          child: const Text('Wählen'),
+                          child: Text(l10n.chooseAction),
                         ),
                       ],
                     ),
@@ -493,11 +496,11 @@ class _TransactionTile extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Abbrechen'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Speichern'),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -513,9 +516,9 @@ class _TransactionTile extends ConsumerWidget {
     );
 
     if (title.isEmpty || category.isEmpty || amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte gultige Werte eingeben.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.invalidValuesMessage)));
       return;
     }
 

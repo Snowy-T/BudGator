@@ -133,7 +133,7 @@ const List<CategoryBudget> _defaultCategoryBudgets = [
   ),
   CategoryBudget(
     id: 'cat-entertainment',
-    name: 'Unterhaltung',
+    name: 'Entertainment',
     monthlyLimit: 0,
     colorValue: 0xFF7C3AED,
     iconKey: 'movie',

@@ -1,0 +1,287 @@
+{
+  "@@locale": "it",
+  "appTitle": "BudGator",
+  "settings": "Impostazioni",
+  "language": "Lingua",
+  "languageSystem": "Lingua di sistema",
+  "languageGerman": "Tedesco",
+  "languageEnglish": "Inglese",
+  "languageItalian": "Italiano",
+  "languageSpanish": "Spagnolo",
+  "homeLabel": "Home",
+  "googlePayEnableTitle": "Attiva rilevamento Google Pay",
+  "googlePayEnableBody": "Per suggerire pagamenti automaticamente, Budgator ha bisogno dell'accesso alle notifiche.",
+  "laterAction": "Dopo",
+  "openSettingsAction": "Apri impostazioni",
+  "closeAction": "Chiudi",
+  "copyAction": "Copia",
+  "copiedCsvClipboard": "CSV copiato negli appunti.",
+  "csvImportHint": "Incolla qui il CSV (inclusa intestazione: id,title,amount,date,category,type)",
+  "importAction": "Importa",
+  "transactionsImportedCount": "{count} transazioni importate.",
+  "@transactionsImportedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailedGeneric": "Importazione non riuscita",
+  "resetAppDataConfirmBody": "Tutte le transazioni, i budget e gli obiettivi di risparmio saranno reimpostati a 0. La modalita scura resta invariata.",
+  "resetAction": "Reimposta",
+  "appDataResetDone": "Dati app reimpostati.",
+  "paymentSavedTransaction": "Pagamento salvato come transazione.",
+  "googlePayDetectedTitle": "Pagamento Google Pay rilevato",
+  "paidAmountLabel": "Importo pagato",
+  "paidAmountHint": "es. 7,50",
+  "titleLabel": "Titolo",
+  "categoryLabel": "Categoria",
+  "ignoreAction": "Ignora",
+  "invalidAmountMessage": "Inserisci un importo valido.",
+  "googlePayPaymentDefaultTitle": "Pagamento Google Pay",
+  "transactionDeleteTitle": "Elimina transazione",
+  "transactionDeleteConfirm": "Vuoi davvero eliminare questa transazione?",
+  "editTransactionTitle": "Modifica transazione",
+  "typeLabel": "Tipo",
+  "dateLabel": "Data",
+  "chooseAction": "Scegli",
+  "invalidValuesMessage": "Inserisci valori validi.",
+  "saveAnywayAction": "Salva comunque",
+  "overspendCategoryLimitTitle": "Limite categoria superato",
+  "overspendNoSourceMessage": "{category} superata di {amount}. Nessun'altra categoria ha budget residuo da sottrarre. Salvare comunque?",
+  "@overspendNoSourceMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "categoryExceededByMessage": "{category} superata di {amount}.",
+  "@categoryExceededByMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "deductionSaveFailed": "Il prelievo dalla categoria non e stato salvato.",
+  "overspendTotalBudgetTitle": "Budget totale superato",
+  "overspendTotalBudgetMessage": "Questa spesa supera il budget totale mensile di {amount}. Salvare comunque?",
+  "@overspendTotalBudgetMessage": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "overspendTransferQuestion": "Vuoi sottrarre questo importo da un'altra categoria?",
+  "deductValueFromLabel": "Sottrai valore da",
+  "deductionAmountLabel": "Importo da sottrarre",
+  "continueWithoutDeduction": "Continua senza sottrazione",
+  "deductAmountAction": "Sottrai importo",
+  "newTransactionTitle": "Nuova transazione",
+  "captureIncomeExpenseSubtitle": "Registra entrate o uscite",
+  "enterTitleValidation": "Inserisci un titolo",
+  "enterAmountValidation": "Inserisci importo",
+  "incomeTypeLabel": "Tipo entrata",
+  "salaryLabel": "Stipendio",
+  "otherIncomeLabel": "Altra entrata",
+  "createCategoryAction": "Aggiungi categoria",
+  "editTotalBudgetAction": "Modifica budget totale",
+  "categoriesTitle": "Categorie",
+  "activeCount": "{count} attive",
+  "@activeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBudgetCategories": "Nessuna categoria con budget",
+  "monthlyTotalBudgetChangeTitle": "Modifica budget totale mensile",
+  "totalBudgetLabel": "Budget totale",
+  "warningTitle": "Avviso",
+  "budgetTooLowWarningMessage": "Il nuovo budget ({newBudget}) e inferiore alle categorie gia assegnate ({allocated}). Regola le categorie.",
+  "@budgetTooLowWarningMessage": {
+    "placeholders": {
+      "newBudget": {},
+      "allocated": {}
+    }
+  },
+  "totalBudgetUpdated": "Budget totale aggiornato",
+  "newCategoryTitle": "Nuova categoria",
+  "categoryNameLabel": "Nome categoria",
+  "budgetAllocationLabel": "Assegnazione budget",
+  "colorLabel": "Colore",
+  "iconLabel": "Icona",
+  "addAction": "Aggiungi",
+  "categoryNameRequired": "Il nome categoria e obbligatorio",
+  "budgetMustBePositive": "Il budget deve essere > 0",
+  "budgetWouldBeExceededAvailable": "Il budget sarebbe superato. Disponibile: {amount}",
+  "@budgetWouldBeExceededAvailable": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryAlreadyExists": "La categoria esiste gia",
+  "categoryAdded": "Categoria aggiunta",
+  "editCategoryTitle": "Modifica {name}",
+  "@editCategoryTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "categoryDeleted": "Categoria eliminata",
+  "invalidAmountGeneric": "Importo non valido",
+  "budgetWouldBeExceededMax": "Il budget sarebbe superato. Max: {amount}",
+  "@budgetWouldBeExceededMax": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryUpdated": "Categoria aggiornata",
+  "setupBudgetTitle": "Configura budget",
+  "setupBudgetDescription": "Per gestire le spese, crea prima un budget totale mensile. Poi puoi creare categorie e distribuire l'importo.",
+  "createMonthlyBudgetAction": "Crea budget mensile",
+  "monthlyBudgetTitle": "Budget mensile",
+  "totalBudgetCurrentMonthLabel": "Budget totale per questo mese",
+  "createAction": "Crea",
+  "invalidPositiveAmountMessage": "Inserisci un importo valido (> 0)",
+  "monthlyBudgetLabel": "Budget mensile",
+  "spentLabel": "Speso",
+  "allocatedLabel": "Assegnato: {amount}",
+  "@allocatedLabel": {"placeholders": {"amount": {}}},
+  "availableLabel": "Disponibile: {amount}",
+  "@availableLabel": {"placeholders": {"amount": {}}},
+  "noBudgetSet": "Nessun budget impostato",
+  "overrunByLabel": "Superato di {amount}",
+  "@overrunByLabel": {"placeholders": {"amount": {}}},
+  "createSavingsGoalTitle": "Crea obiettivo di risparmio",
+  "editSavingsGoalTitle": "Modifica obiettivo di risparmio",
+  "goalNameLabel": "Nome",
+  "goalAmountLabel": "Importo obiettivo",
+  "alreadySavedLabel": "Gia risparmiato",
+  "monthlyDeductionFormLabel": "Prelievo mensile",
+  "debitDayLabel": "Giorno addebito",
+  "dayOfMonthLabel": "{day}. del mese",
+  "@dayOfMonthLabel": {"placeholders": {"day": {"type": "int"}}},
+  "automationActive": "Automazione attiva",
+  "automaticMonthlyDeductionSubtitle": "Registra automaticamente il prelievo mensile",
+  "savingsGoalDeleted": "Obiettivo eliminato",
+  "enterValidValuesMessage": "Inserisci valori validi.",
+  "savedCannotExceedTarget": "Il risparmiato non puo superare l'obiettivo.",
+  "savingsGoalCreated": "Obiettivo creato",
+  "savingsGoalUpdated": "Obiettivo aggiornato",
+  "depositIntoGoalTitle": "Versa in {name}",
+  "@depositIntoGoalTitle": {"placeholders": {"name": {}}},
+  "depositAction": "Versa",
+  "goalAlreadyReached": "Obiettivo gia completamente raggiunto.",
+  "depositedAmountMessage": "{amount} versati",
+  "@depositedAmountMessage": {"placeholders": {"amount": {}}},
+  "newSavingsGoalAction": "Nuovo obiettivo",
+  "noSavingsGoalsHint": "Nessun obiettivo ancora. Crea un obiettivo con prelievo mensile.",
+  "monthlyDeductionValue": "Prelievo mensile: {amount}",
+  "@monthlyDeductionValue": {"placeholders": {"amount": {}}},
+  "debitDayValue": "Addebito: {day}. del mese",
+  "@debitDayValue": {"placeholders": {"day": {"type": "int"}}},
+  "depositShortAction": "Versa",
+  "editShortAction": "Modifica",
+  "noTransactionsRecent": "Nessuna transazione",
+  "recentTransactionsTitle": "Ultime transazioni",
+  "allAction": "Tutte",
+  "noExpensesLast30Days": "Nessuna spesa negli ultimi 30 giorni",
+  "noCategoriesLabel": "Nessuna categoria",
+  "topCategoriesTitle": "Categorie principali",
+  "expensesLabel": "Spese",
+  "monthlyBudgetRemainingLabel": "Budget mensile restante",
+  "expensesTrendTitle": "Andamento spese",
+  "todayLabel": "Oggi",
+  "weekLabel": "Settimana",
+  "monthLabel": "Mese",
+  "savingsGoalsTitle": "Obiettivi di risparmio",
+  "noActiveSavingsGoal": "Nessun obiettivo attivo.",
+  "createSavingsGoalAction": "Crea obiettivo",
+  "savingsGoalHeader": "Obiettivo: {name}",
+  "@savingsGoalHeader": {"placeholders": {"name": {}}},
+  "goalNameInputLabel": "Nome obiettivo",
+  "targetAmountInputLabel": "Importo obiettivo",
+  "currentOfTarget": "{current} di {target}",
+  "@currentOfTarget": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "availableBalance": "Saldo disponibile",
+  "okAction": "OK",
+  "savingsGoalEditTitle": "Modifica obiettivo di risparmio",
+  "savingsGoalNameLabel": "Nome obiettivo",
+  "savingsGoalTargetLabel": "Importo obiettivo",
+  "goalDepositTransactionTitle": "Versamento {name}",
+  "@goalDepositTransactionTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "darkMode": "Modalita scura",
+  "followsDeviceSetting": "Segue l'impostazione del dispositivo",
+  "enabled": "Attivato",
+  "disabled": "Disattivato",
+  "csvExport": "Esporta CSV",
+  "csvImport": "Importa CSV",
+  "copyTransactionsAsCsv": "Copia le transazioni come CSV",
+  "importTransactionsFromCsv": "Importa transazioni da CSV",
+  "resetAppData": "Reimposta dati app",
+  "resetBudgetsGoalsTransactions": "Reimposta budget, obiettivi e transazioni a 0",
+  "budgetAndGoals": "Budget e obiettivi di risparmio",
+  "budgetsTab": "Budget",
+  "savingsGoalsTab": "Obiettivi",
+  "statsTitle": "Statistiche",
+  "statsBookingsInRange": "{count} movimenti nel periodo",
+  "@statsBookingsInRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreMetrics": "Metriche principali",
+  "weeklyTrend": "Andamento settimanale",
+  "categoryBreakdown": "Ripartizione categorie",
+  "weekdayPattern": "Schema giorni della settimana",
+  "statsEmptyTitle": "Nessun dato per le statistiche",
+  "statsEmptySubtitle": "Quando aggiungi transazioni, qui vedrai trend, categorie e tasso di risparmio.",
+  "statsPositiveTrend": "Stai risparmiando nel trend",
+  "statsNegativeTrend": "Le spese sono attualmente troppo alte",
+  "netInRangeLabel": "Netto in {range} (entrate - uscite)",
+  "@netInRangeLabel": {"placeholders": {"range": {}}},
+  "incomeLabel": "Entrate",
+  "expensesPerDayLabel": "Spese / giorno",
+  "largestExpenseLabel": "Spesa piu grande",
+  "activeDaysLabel": "Giorni attivi",
+  "savingsRateLabel": "Tasso di risparmio",
+  "noExpenseStreakLabel": "senza spese: {days} giorni",
+  "@noExpenseStreakLabel": {"placeholders": {"days": {"type": "int"}}},
+  "noExpensesInRange": "Nessuna spesa nel periodo selezionato.",
+  "weeklyAverageLabel": "Media settimana",
+  "trendLabel": "Trend",
+  "weeklyBarsHint": "Ogni barra = una settimana. Cosi vedi subito valori anomali e cambi di trend.",
+  "noCategoryExpenses": "Nessuna categoria con spese ancora.",
+  "noWeekdayExpenses": "Nessuna spesa per giorno della settimana ancora.",
+  "highestExpenseDayHint": "Rango 1 = giorno con spesa piu alta. L'intensita del colore mostra subito la differenza.",
+  "weekLabelPrefix": "Settimana {week}",
+  "@weekLabelPrefix": {"placeholders": {"week": {}}},
+  "categoryGeneral": "Generale",
+  "categoryEntertainment": "Intrattenimento",
+  "categoryCafe": "Cafe",
+  "range7Days": "7 giorni",
+  "range30Days": "30 giorni",
+  "range90Days": "90 giorni",
+  "rangeAll": "Totale",
+  "transactionsTitle": "Transazioni",
+  "tabAll": "Tutte",
+  "tabIncome": "Entrate",
+  "tabExpenses": "Uscite",
+  "noTransactions": "Nessuna transazione",
+  "edit": "Modifica",
+  "delete": "Elimina",
+  "cancel": "Annulla",
+  "save": "Salva",
+  "addTransaction": "Aggiungi transazione"
+}

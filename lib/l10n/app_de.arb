@@ -1,0 +1,327 @@
+{
+  "@@locale": "de",
+  "appTitle": "BudGator",
+  "settings": "Einstellungen",
+  "language": "Sprache",
+  "languageSystem": "Systemsprache",
+  "languageGerman": "Deutsch",
+  "languageEnglish": "English",
+  "languageItalian": "Italienisch",
+  "languageSpanish": "Spanisch",
+  "homeLabel": "Home",
+  "googlePayEnableTitle": "Google Pay Erkennung aktivieren",
+  "googlePayEnableBody": "Damit Zahlungen automatisch vorgeschlagen werden, braucht Budgator Zugriff auf Benachrichtigungen.",
+  "laterAction": "Spaeter",
+  "openSettingsAction": "Einstellungen oeffnen",
+  "closeAction": "Schliessen",
+  "copyAction": "Kopieren",
+  "copiedCsvClipboard": "CSV in die Zwischenablage kopiert.",
+  "csvImportHint": "CSV hier einfuegen (inkl. Header: id,title,amount,date,category,type)",
+  "importAction": "Importieren",
+  "transactionsImportedCount": "{count} Transaktionen importiert.",
+  "@transactionsImportedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailedGeneric": "Import fehlgeschlagen",
+  "resetAppDataConfirmBody": "Alle Transaktionen, Budgets und Sparziele werden auf 0 zurueckgesetzt. Der Darkmode bleibt unveraendert.",
+  "resetAction": "Zuruecksetzen",
+  "appDataResetDone": "App-Daten wurden zurueckgesetzt.",
+  "paymentSavedTransaction": "Zahlung als Transaktion gespeichert.",
+  "googlePayDetectedTitle": "Google Pay Zahlung erkannt",
+  "paidAmountLabel": "Bezahlter Betrag",
+  "paidAmountHint": "z. B. 7,50",
+  "titleLabel": "Titel",
+  "categoryLabel": "Kategorie",
+  "ignoreAction": "Ignorieren",
+  "invalidAmountMessage": "Bitte gueltigen Betrag eingeben.",
+  "googlePayPaymentDefaultTitle": "Google Pay Zahlung",
+  "transactionDeleteTitle": "Transaktion loeschen",
+  "transactionDeleteConfirm": "Moechtest du diese Transaktion wirklich loeschen?",
+  "editTransactionTitle": "Transaktion bearbeiten",
+  "typeLabel": "Typ",
+  "dateLabel": "Datum",
+  "chooseAction": "Waehlen",
+  "invalidValuesMessage": "Bitte gueltige Werte eingeben.",
+  "saveAnywayAction": "Trotzdem speichern",
+  "overspendCategoryLimitTitle": "Kategorie-Limit ueberschritten",
+  "overspendNoSourceMessage": "{category} wurde um {amount} ueberschritten. Keine andere Kategorie hat Restbudget zum Abziehen. Trotzdem speichern?",
+  "@overspendNoSourceMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "categoryExceededByMessage": "{category} wurde um {amount} ueberschritten.",
+  "@categoryExceededByMessage": {
+    "placeholders": {
+      "category": {},
+      "amount": {}
+    }
+  },
+  "deductionSaveFailed": "Abzug aus der Kategorie konnte nicht gespeichert werden.",
+  "overspendTotalBudgetTitle": "Gesamtbudget ueberschritten",
+  "overspendTotalBudgetMessage": "Diese Ausgabe liegt ueber dem monatlichen Gesamtbudget um {amount}. Trotzdem speichern?",
+  "@overspendTotalBudgetMessage": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "overspendTransferQuestion": "Moechtest du diesen Betrag von einer anderen Kategorie abziehen?",
+  "deductValueFromLabel": "Wert abziehen von",
+  "deductionAmountLabel": "Abzugsbetrag",
+  "continueWithoutDeduction": "Ohne Abzug fortfahren",
+  "deductAmountAction": "Betrag abziehen",
+  "newTransactionTitle": "Neue Transaktion",
+  "captureIncomeExpenseSubtitle": "Erfasse Einnahmen oder Ausgaben",
+  "enterTitleValidation": "Titel eingeben",
+  "enterAmountValidation": "Betrag eingeben",
+  "incomeTypeLabel": "Einnahme-Typ",
+  "salaryLabel": "Gehalt",
+  "otherIncomeLabel": "Andere Einnahme",
+  "createCategoryAction": "Kategorie hinzufuegen",
+  "editTotalBudgetAction": "Gesamtbudget aendern",
+  "categoriesTitle": "Kategorien",
+  "activeCount": "{count} aktiv",
+  "@activeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBudgetCategories": "Keine Kategorien mit Budget vorhanden",
+  "monthlyTotalBudgetChangeTitle": "Monatliches Gesamtbudget aendern",
+  "totalBudgetLabel": "Gesamtbudget",
+  "warningTitle": "Warnung",
+  "budgetTooLowWarningMessage": "Das neue Budget ({newBudget}) ist kleiner als bereits verteilte Kategorien ({allocated}). Bitte passe die Kategorien an.",
+  "@budgetTooLowWarningMessage": {
+    "placeholders": {
+      "newBudget": {},
+      "allocated": {}
+    }
+  },
+  "totalBudgetUpdated": "Gesamtbudget aktualisiert",
+  "newCategoryTitle": "Neue Kategorie",
+  "categoryNameLabel": "Kategoriename",
+  "budgetAllocationLabel": "Budget-Zuweisung",
+  "colorLabel": "Farbe",
+  "iconLabel": "Icon",
+  "addAction": "Hinzufuegen",
+  "categoryNameRequired": "Kategoriename ist erforderlich",
+  "budgetMustBePositive": "Budget muss > 0 sein",
+  "budgetWouldBeExceededAvailable": "Budget wuerde ueberschritten. Verfuegbar: {amount}",
+  "@budgetWouldBeExceededAvailable": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryAlreadyExists": "Kategorie existiert bereits",
+  "categoryAdded": "Kategorie hinzugefuegt",
+  "editCategoryTitle": "{name} bearbeiten",
+  "@editCategoryTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "categoryDeleted": "Kategorie geloescht",
+  "invalidAmountGeneric": "Ungueltiger Betrag",
+  "budgetWouldBeExceededMax": "Budget wuerde ueberschritten. Max: {amount}",
+  "@budgetWouldBeExceededMax": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "categoryUpdated": "Kategorie aktualisiert",
+  "setupBudgetTitle": "Budget einrichten",
+  "setupBudgetDescription": "Um Ausgaben zu verwalten, richte zuerst ein monatliches Gesamtbudget ein. Danach kannst du Kategorien erstellen und den Betrag verteilen.",
+  "createMonthlyBudgetAction": "Monatsbudget erstellen",
+  "monthlyBudgetTitle": "Monatsbudget",
+  "totalBudgetCurrentMonthLabel": "Gesamtbudget fuer diesen Monat",
+  "createAction": "Erstellen",
+  "invalidPositiveAmountMessage": "Bitte einen gueltigen Betrag (> 0) eingeben",
+  "monthlyBudgetLabel": "Monatsbudget",
+  "spentLabel": "Ausgegeben",
+  "allocatedLabel": "Verteilt: {amount}",
+  "@allocatedLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "availableLabel": "Verfuegbar: {amount}",
+  "@availableLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "noBudgetSet": "Kein Budget gesetzt",
+  "overrunByLabel": "Ueberschritten um {amount}",
+  "@overrunByLabel": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "createSavingsGoalTitle": "Sparziel erstellen",
+  "editSavingsGoalTitle": "Sparziel bearbeiten",
+  "goalNameLabel": "Name",
+  "goalAmountLabel": "Zielbetrag",
+  "alreadySavedLabel": "Bereits gespart",
+  "monthlyDeductionFormLabel": "Monatlicher Abzug",
+  "debitDayLabel": "Abbuchungstag",
+  "dayOfMonthLabel": "{day}. des Monats",
+  "@dayOfMonthLabel": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "automationActive": "Automatik aktiv",
+  "automaticMonthlyDeductionSubtitle": "Monatlichen Abzug automatisch verbuchen",
+  "savingsGoalDeleted": "Sparziel geloescht",
+  "enterValidValuesMessage": "Bitte valide Werte eingeben.",
+  "savedCannotExceedTarget": "Bereits gespart darf Ziel nicht ueberschreiten.",
+  "savingsGoalCreated": "Sparziel erstellt",
+  "savingsGoalUpdated": "Sparziel aktualisiert",
+  "depositIntoGoalTitle": "In {name} einzahlen",
+  "@depositIntoGoalTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "depositAction": "Einzahlen",
+  "goalAlreadyReached": "Ziel ist bereits voll erreicht.",
+  "depositedAmountMessage": "{amount} eingezahlt",
+  "@depositedAmountMessage": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "newSavingsGoalAction": "Neues Sparziel",
+  "noSavingsGoalsHint": "Noch keine Sparziele. Lege ein Ziel mit monatlichem Abzug an.",
+  "monthlyDeductionValue": "Monatlicher Abzug: {amount}",
+  "@monthlyDeductionValue": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "debitDayValue": "Abbuchung: {day}. des Monats",
+  "@debitDayValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "depositShortAction": "Einzahlen",
+  "editShortAction": "Bearbeiten",
+  "noTransactionsRecent": "Keine Transaktionen",
+  "recentTransactionsTitle": "Letzte Transaktionen",
+  "allAction": "Alle",
+  "noExpensesLast30Days": "Keine Ausgaben in den letzten 30 Tagen",
+  "noCategoriesLabel": "Keine Kategorien",
+  "topCategoriesTitle": "Top Kategorien",
+  "expensesLabel": "Ausgaben",
+  "monthlyBudgetRemainingLabel": "Monatsbudget Rest",
+  "expensesTrendTitle": "Ausgaben Trend",
+  "todayLabel": "Heute",
+  "weekLabel": "Woche",
+  "monthLabel": "Monat",
+  "savingsGoalsTitle": "Sparziele",
+  "noActiveSavingsGoal": "Noch kein Sparziel aktiv.",
+  "createSavingsGoalAction": "Sparziel erstellen",
+  "savingsGoalHeader": "Sparziel: {name}",
+  "@savingsGoalHeader": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "goalNameInputLabel": "Zielname",
+  "targetAmountInputLabel": "Zielbetrag",
+  "currentOfTarget": "{current} von {target}",
+  "@currentOfTarget": {
+    "placeholders": {
+      "current": {},
+      "target": {}
+    }
+  },
+  "availableBalance": "Verfuegbarer Saldo",
+  "okAction": "OK",
+  "savingsGoalEditTitle": "Sparziel bearbeiten",
+  "savingsGoalNameLabel": "Zielname",
+  "savingsGoalTargetLabel": "Zielbetrag",
+  "goalDepositTransactionTitle": "{name} Einzahlung",
+  "@goalDepositTransactionTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "darkMode": "Darkmode",
+  "followsDeviceSetting": "Folgt der Geraeteeinstellung",
+  "enabled": "Aktiviert",
+  "disabled": "Deaktiviert",
+  "csvExport": "CSV Export",
+  "csvImport": "CSV Import",
+  "copyTransactionsAsCsv": "Transaktionen als CSV kopieren",
+  "importTransactionsFromCsv": "Transaktionen aus CSV importieren",
+  "resetAppData": "App-Daten zuruecksetzen",
+  "resetBudgetsGoalsTransactions": "Setzt Budgets, Ziele und Transaktionen auf 0",
+  "budgetAndGoals": "Budget & Sparziele",
+  "budgetsTab": "Budgets",
+  "savingsGoalsTab": "Sparziele",
+  "statsTitle": "Statistik",
+  "statsBookingsInRange": "{count} Buchungen im Zeitraum",
+  "@statsBookingsInRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coreMetrics": "Kernmetriken",
+  "weeklyTrend": "Wochenverlauf",
+  "categoryBreakdown": "Kategorie-Anteile",
+  "weekdayPattern": "Wochentags-Muster",
+  "statsEmptyTitle": "Noch keine Daten fuer Statistik",
+  "statsEmptySubtitle": "Sobald du Transaktionen hinzufuegst, siehst du hier Trends, Kategorien und Sparquote.",
+  "statsPositiveTrend": "Du sparst im Trend",
+  "statsNegativeTrend": "Ausgaben aktuell zu hoch",
+  "netInRangeLabel": "Netto in {range} (Einnahmen - Ausgaben)",
+  "@netInRangeLabel": {"placeholders": {"range": {}}},
+  "incomeLabel": "Einnahmen",
+  "expensesPerDayLabel": "Ausgaben / Tag",
+  "largestExpenseLabel": "Groesste Ausgabe",
+  "activeDaysLabel": "Aktive Tage",
+  "savingsRateLabel": "Sparquote",
+  "noExpenseStreakLabel": "ausgabefrei: {days} Tage",
+  "@noExpenseStreakLabel": {"placeholders": {"days": {"type": "int"}}},
+  "noExpensesInRange": "Noch keine Ausgaben im Zeitraum.",
+  "weeklyAverageLabel": "Ø Woche",
+  "trendLabel": "Trend",
+  "weeklyBarsHint": "Je Balken = eine Woche. So siehst du Ausreisser und Trendwechsel sofort.",
+  "noCategoryExpenses": "Noch keine Kategorien mit Ausgaben.",
+  "noWeekdayExpenses": "Noch keine Ausgaben nach Wochentagen.",
+  "highestExpenseDayHint": "Rang 1 = hoechster Ausgabentag. Die Farbstaerke zeigt dir den Unterschied auf einen Blick.",
+  "weekLabelPrefix": "Woche {week}",
+  "@weekLabelPrefix": {"placeholders": {"week": {}}},
+  "categoryGeneral": "Allgemein",
+  "categoryEntertainment": "Unterhaltung",
+  "categoryCafe": "Cafe",
+  "range7Days": "7 Tage",
+  "range30Days": "30 Tage",
+  "range90Days": "90 Tage",
+  "rangeAll": "Gesamt",
+  "transactionsTitle": "Transaktionen",
+  "tabAll": "Alle",
+  "tabIncome": "Einnahmen",
+  "tabExpenses": "Ausgaben",
+  "noTransactions": "Keine Transaktionen",
+  "edit": "Bearbeiten",
+  "delete": "Loeschen",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "addTransaction": "Transaktion hinzufuegen"
+}

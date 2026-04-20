@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
+import 'package:budgator/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/services/money_formatter.dart';
 import '../../data/models/transaction_model.dart';
@@ -11,16 +13,16 @@ import '../theme/category_colors.dart';
 enum StatsRange { last7Days, last30Days, last90Days, all }
 
 extension _StatsRangeLabel on StatsRange {
-  String get label {
+  String label(AppLocalizations l10n) {
     switch (this) {
       case StatsRange.last7Days:
-        return '7 Tage';
+        return l10n.range7Days;
       case StatsRange.last30Days:
-        return '30 Tage';
+        return l10n.range30Days;
       case StatsRange.last90Days:
-        return '90 Tage';
+        return l10n.range90Days;
       case StatsRange.all:
-        return 'Gesamt';
+        return l10n.rangeAll;
     }
   }
 }
@@ -37,10 +39,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final transactions = ref.watch(transactionsProvider);
     final filtered = _applyRangeFilter(transactions, _selectedRange);
-    final stats = _buildStats(filtered);
+    final stats = _buildStats(filtered, l10n);
 
     if (transactions.isEmpty) {
       return const _EmptyStatsState();
@@ -56,13 +59,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Statistik',
+                  Text(
+                    l10n.statsTitle,
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${stats.transactionCount} Buchungen im Zeitraum',
+                    l10n.statsBookingsInRange(stats.transactionCount),
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
@@ -75,7 +78,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                     children: [
                       for (final range in StatsRange.values)
                         ChoiceChip(
-                          label: Text(range.label),
+                          label: Text(range.label(l10n)),
                           selected: _selectedRange == range,
                           onSelected: (_) {
                             setState(() => _selectedRange = range);
@@ -94,19 +97,19 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 10),
-                const _SectionTitle('Kernmetriken'),
+                _SectionTitle(l10n.coreMetrics),
                 const SizedBox(height: 10),
                 _KpiGrid(stats: stats),
                 const SizedBox(height: 20),
-                const _SectionTitle('Wochenverlauf'),
+                _SectionTitle(l10n.weeklyTrend),
                 const SizedBox(height: 10),
                 _WeeklyTrendCard(stats: stats),
                 const SizedBox(height: 20),
-                const _SectionTitle('Kategorie-Anteile'),
+                _SectionTitle(l10n.categoryBreakdown),
                 const SizedBox(height: 10),
                 _CategoryBreakdownCard(stats: stats),
                 const SizedBox(height: 20),
-                const _SectionTitle('Wochentags-Muster'),
+                _SectionTitle(l10n.weekdayPattern),
                 const SizedBox(height: 10),
                 _WeekdayPatternCard(stats: stats),
                 const SizedBox(height: 100),
@@ -127,6 +130,7 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPositive = stats.netFlow >= 0;
@@ -161,7 +165,7 @@ class _InsightCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isPositive ? 'Du sparst im Trend' : 'Ausgaben aktuell zu hoch',
+            isPositive ? l10n.statsPositiveTrend : l10n.statsNegativeTrend,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 16,
@@ -181,7 +185,7 @@ class _InsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Netto in ${selectedRange.label} (Einnahmen - Ausgaben)',
+            l10n.netInRangeLabel(selectedRange.label(l10n)),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -199,6 +203,7 @@ class _KpiGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 430;
@@ -221,13 +226,13 @@ class _KpiGrid extends StatelessWidget {
           children: [
             pair(
               _StatTile(
-                label: 'Einnahmen',
+                label: l10n.incomeLabel,
                 value: _formatAmount(stats.totalIncome),
                 icon: Icons.arrow_downward_rounded,
                 color: const Color(0xFF16A34A),
               ),
               _StatTile(
-                label: 'Ausgaben',
+                label: l10n.expensesLabel,
                 value: _formatAmount(stats.totalExpenses),
                 icon: Icons.arrow_upward_rounded,
                 color: const Color(0xFFDC2626),
@@ -236,13 +241,13 @@ class _KpiGrid extends StatelessWidget {
             const SizedBox(height: 10),
             pair(
               _StatTile(
-                label: 'Sparquote',
+                label: l10n.savingsRateLabel,
                 value: '${stats.savingsRate.toStringAsFixed(1)}%',
                 icon: Icons.savings_rounded,
                 color: const Color(0xFF0EA5E9),
               ),
               _StatTile(
-                label: 'Ausgaben / Tag',
+                label: l10n.expensesPerDayLabel,
                 value: _formatAmount(stats.avgExpensePerDay),
                 icon: Icons.calendar_view_day_rounded,
                 color: const Color(0xFF7C3AED),
@@ -251,16 +256,16 @@ class _KpiGrid extends StatelessWidget {
             const SizedBox(height: 10),
             pair(
               _StatTile(
-                label: 'Groesste Ausgabe',
+                label: l10n.largestExpenseLabel,
                 value: _formatAmount(stats.maxExpenseAmount),
                 subtitle: stats.maxExpenseTitle,
                 icon: Icons.warning_amber_rounded,
                 color: const Color(0xFFF59E0B),
               ),
               _StatTile(
-                label: 'Aktive Tage',
+                label: l10n.activeDaysLabel,
                 value: '${stats.activeDays}',
-                subtitle: 'ausgabefrei: ${stats.currentNoSpendStreak} Tage',
+                subtitle: l10n.noExpenseStreakLabel(stats.currentNoSpendStreak),
                 icon: Icons.today_rounded,
                 color: const Color(0xFF334155),
               ),
@@ -279,8 +284,9 @@ class _WeeklyTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (stats.weeklyExpenses.isEmpty) {
-      return const _SimpleInfoCard(text: 'Noch keine Ausgaben im Zeitraum.');
+      return _SimpleInfoCard(text: l10n.noExpensesInRange);
     }
 
     final values = stats.weeklyExpenses.values.toList();
@@ -310,17 +316,17 @@ class _WeeklyTrendCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _MiniPill(
-                label: 'Max',
+                label: l10n.statsTitle,
                 value: _formatCompact(maxValue),
                 color: const Color(0xFF10B981),
               ),
               _MiniPill(
-                label: 'Ø Woche',
+                label: l10n.weeklyAverageLabel,
                 value: _formatCompact(avgValue),
                 color: const Color(0xFF0EA5E9),
               ),
               _MiniPill(
-                label: 'Trend',
+                label: l10n.trendLabel,
                 value: '${trend >= 0 ? '+' : ''}${_formatCompact(trend)}',
                 color: trend <= 0
                     ? const Color(0xFF16A34A)
@@ -456,7 +462,7 @@ class _WeeklyTrendCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Je Balken = eine Woche. So siehst du Ausreisser und Trendwechsel sofort.',
+            l10n.weeklyBarsHint,
             style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
           ),
         ],
@@ -472,8 +478,9 @@ class _CategoryBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (stats.categoryExpenses.isEmpty) {
-      return const _SimpleInfoCard(text: 'Noch keine Kategorien mit Ausgaben.');
+      return _SimpleInfoCard(text: l10n.noCategoryExpenses);
     }
 
     return Container(
@@ -485,7 +492,7 @@ class _CategoryBreakdownCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _BarRow(
-                label: entry.key,
+                label: _localizedCategoryLabel(entry.key, l10n),
                 amount: entry.value,
                 percent: stats.totalExpenses == 0
                     ? 0
@@ -505,22 +512,11 @@ class _WeekdayPatternCard extends StatelessWidget {
 
   final _StatsSnapshot stats;
 
-  static const _weekdayNames = <int, String>{
-    DateTime.monday: 'Mo',
-    DateTime.tuesday: 'Di',
-    DateTime.wednesday: 'Mi',
-    DateTime.thursday: 'Do',
-    DateTime.friday: 'Fr',
-    DateTime.saturday: 'Sa',
-    DateTime.sunday: 'So',
-  };
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (stats.weekdayExpenses.isEmpty) {
-      return const _SimpleInfoCard(
-        text: 'Noch keine Ausgaben nach Wochentagen.',
-      );
+      return _SimpleInfoCard(text: l10n.noWeekdayExpenses);
     }
 
     final maxValue = stats.weekdayExpenses.values.fold<double>(
@@ -542,6 +538,7 @@ class _WeekdayPatternCard extends StatelessWidget {
     for (var i = 0; i < sorted.length; i++) {
       rankByDay[sorted[i].key] = i + 1;
     }
+    final locale = Localizations.localeOf(context).toLanguageTag();
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -553,14 +550,14 @@ class _WeekdayPatternCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _WeekdayRankRow(
-                label: _weekdayNames[day]!,
+                label: _weekdayLabel(day, locale),
                 amount: stats.weekdayExpenses[day] ?? 0,
                 rank: rankByDay[day] ?? 7,
                 maxValue: maxValue,
               ),
             ),
           Text(
-            'Rang 1 = hoechster Ausgabentag. Die Farbstaerke zeigt dir den Unterschied auf einen Blick.',
+            l10n.highestExpenseDayHint,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
@@ -570,6 +567,11 @@ class _WeekdayPatternCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _weekdayLabel(int weekday, String localeTag) {
+  final date = DateTime(2024, 1, weekday);
+  return DateFormat.E(localeTag).format(date);
 }
 
 class _WeekdayRankRow extends StatelessWidget {
@@ -591,7 +593,7 @@ class _WeekdayRankRow extends StatelessWidget {
     final intensity = maxValue <= 0 ? 0.0 : (amount / maxValue).clamp(0.0, 1.0);
     final heatColor = Color.lerp(
       colorScheme.surfaceContainerHighest,
-      const Color(0xFF0EA5E9),
+      colorScheme.primary,
       intensity,
     )!;
 
@@ -872,6 +874,7 @@ class _EmptyStatsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Center(
         child: Padding(
@@ -885,14 +888,14 @@ class _EmptyStatsState extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Noch keine Daten fuer Statistik',
+              Text(
+                l10n.statsEmptyTitle,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Sobald du Transaktionen hinzufuegst, siehst du hier Trends, Kategorien und Sparquote.',
+                l10n.statsEmptySubtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -942,7 +945,10 @@ List<TransactionModel> _applyRangeFilter(
   }).toList();
 }
 
-_StatsSnapshot _buildStats(List<TransactionModel> transactions) {
+_StatsSnapshot _buildStats(
+  List<TransactionModel> transactions,
+  AppLocalizations l10n,
+) {
   final sorted = [...transactions]..sort((a, b) => a.date.compareTo(b.date));
   final expenses = sorted
       .where((t) => t.type == TransactionType.expense)
@@ -1003,7 +1009,7 @@ _StatsSnapshot _buildStats(List<TransactionModel> transactions) {
   final weeklyLabelMap = <String, double>{};
   var weekCounter = 1;
   for (final entry in trimmedWeeks) {
-    final label = 'Woche $weekCounter';
+    final label = l10n.weekLabelPrefix(weekCounter);
     weeklyLabelMap[label] = entry.value;
     weekCounter++;
   }
@@ -1030,6 +1036,20 @@ _StatsSnapshot _buildStats(List<TransactionModel> transactions) {
     weekdayExpenses: weekdayTotals,
     weeklyExpenses: weeklyLabelMap,
   );
+}
+
+String _localizedCategoryLabel(String key, AppLocalizations l10n) {
+  switch (key) {
+    case 'General':
+      return l10n.categoryGeneral;
+    case 'Entertainment':
+    case 'Unterhaltung':
+      return l10n.categoryEntertainment;
+    case 'Cafe':
+      return l10n.categoryCafe;
+    default:
+      return key;
+  }
 }
 
 int _calcCurrentNoSpendStreak(Set<DateTime> expenseDays) {

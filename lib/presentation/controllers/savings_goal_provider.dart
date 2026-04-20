@@ -97,6 +97,24 @@ String _monthKey(DateTime date) {
   return '${date.year}-$month';
 }
 
+String? _deferCurrentMonthIfDayPassed({
+  required int contributionDay,
+  required bool isActive,
+  required double monthlyContribution,
+  required DateTime now,
+  required String? existingMonth,
+}) {
+  if (!isActive || monthlyContribution <= 0) {
+    return existingMonth;
+  }
+
+  if (now.day <= contributionDay) {
+    return existingMonth;
+  }
+
+  return _monthKey(now);
+}
+
 class AppliedSavingsContribution {
   final String goalId;
   final String goalName;
@@ -149,6 +167,13 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       current: current,
       monthlyContribution: monthlyContribution,
       isActive: isActive,
+      lastAutoContributionMonth: _deferCurrentMonthIfDayPassed(
+        contributionDay: _normalizeContributionDay(contributionDay),
+        isActive: isActive,
+        monthlyContribution: monthlyContribution,
+        now: DateTime.now(),
+        existingMonth: null,
+      ),
       colorValue: colorValue,
       contributionDay: _normalizeContributionDay(contributionDay),
     );
@@ -174,20 +199,33 @@ class SavingsGoalNotifier extends StateNotifier<List<SavingsGoal>> {
       return;
     }
 
+    final now = DateTime.now();
     state = [
       for (final goal in state)
         if (goal.id == id)
-          goal.copyWith(
-            name: name.trim(),
-            target: target,
-            monthlyContribution: monthlyContribution,
-            current: current,
-            isActive: isActive,
-            colorValue: colorValue,
-            contributionDay: contributionDay == null
+          (() {
+            final normalizedContributionDay = contributionDay == null
                 ? goal.contributionDay
-                : _normalizeContributionDay(contributionDay),
-          )
+                : _normalizeContributionDay(contributionDay);
+            final updatedMonth = _deferCurrentMonthIfDayPassed(
+              contributionDay: normalizedContributionDay,
+              isActive: isActive,
+              monthlyContribution: monthlyContribution,
+              now: now,
+              existingMonth: goal.lastAutoContributionMonth,
+            );
+
+            return goal.copyWith(
+              name: name.trim(),
+              target: target,
+              monthlyContribution: monthlyContribution,
+              current: current,
+              isActive: isActive,
+              colorValue: colorValue,
+              contributionDay: normalizedContributionDay,
+              lastAutoContributionMonth: updatedMonth,
+            );
+          })()
         else
           goal,
     ];

@@ -1321,6 +1321,18 @@ class _SavingsGoalsTab extends ConsumerWidget {
         return;
       }
 
+      ref
+          .read(transactionsProvider.notifier)
+          .add(
+            TransactionModel(
+              title: '${goal.name}-Einzahlung',
+              amount: applied,
+              date: DateTime.now(),
+              category: 'Sparziel',
+              type: TransactionType.expense,
+            ),
+          );
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${formatEuroSmart(applied)} eingezahlt')),
       );
